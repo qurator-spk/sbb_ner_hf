@@ -4,7 +4,9 @@ import optuna
 from transformers import AutoModelForTokenClassification, DataCollatorForTokenClassification, TrainingArguments, Trainer
 import train
 
-def compute_metrics_per_tag(metric, trainer, tokenized_dataset, label_list):
+metric = evaluate.load("seqeval")
+
+def compute_metrics_per_tag(trainer, tokenized_dataset, label_list):
     # eval metrics for each category
     
     predictions, labels, _ = trainer.predict(tokenized_dataset["validation"])
@@ -32,6 +34,8 @@ def optimize(optimize_params, train_params, model_path, label_list, tokenizer, t
                 hp_space_dict[k] = trial.suggest_float(k, v["borders"][0], v["borders"][1], log=True)
             elif v["param_type"] == "categorical": 
                 hp_space_dict[k] = trial.suggest_categorical(k, v["borders"])
+        print("optimizing within the following hyperparameter space:")
+        print(hp_space_dict)
         return hp_space_dict
 
     def model_init(trial):
@@ -39,7 +43,7 @@ def optimize(optimize_params, train_params, model_path, label_list, tokenizer, t
         return model
 
     def compute_metrics(p):
-        metric = evaluate.load("seqeval") #load_metric has been removed, see https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524/2
+        #load_metric has been removed, see https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524/2
         
         predictions, labels = p
         predictions = np.argmax(predictions, axis=2)
@@ -54,7 +58,7 @@ def optimize(optimize_params, train_params, model_path, label_list, tokenizer, t
             for prediction, label in zip(predictions, labels)
         ]
 
-        results = metric.compute(predictions=true_predictions, references=true_labels)
+        results = metric.compute(predictions=true_predictions, references=true_labels, zero_division=0)
         return {
             "precision": results["overall_precision"],
             "recall": results["overall_recall"],

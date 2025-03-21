@@ -94,7 +94,7 @@ def train_model(model_path, label_list, train_params, tokenized_dataset, tokeniz
             for prediction, label in zip(predictions, labels)
         ]
 
-        results = metric.compute(predictions=true_predictions, references=true_labels)
+        results = metric.compute(predictions=true_predictions, references=true_labels, zero_division=0)
         return {
             "precision": results["overall_precision"],
             "recall": results["overall_recall"],
