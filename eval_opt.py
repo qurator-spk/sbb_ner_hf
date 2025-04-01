@@ -1,6 +1,5 @@
 import evaluate
 import numpy as np
-import optuna
 from transformers import AutoModelForTokenClassification, DataCollatorForTokenClassification, TrainingArguments, Trainer
 import train
 

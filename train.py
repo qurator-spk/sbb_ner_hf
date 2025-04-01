@@ -4,7 +4,6 @@ from datasets import load_dataset, load_from_disk
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import TrainingArguments, Trainer
 from transformers import DataCollatorForTokenClassification
-import eval_opt
 import evaluate
 import numpy as np
 
