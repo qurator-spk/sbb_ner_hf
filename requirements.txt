@@ -1,5 +1,6 @@
 datasets==3.0.1
 evaluate==0.4.3
+notebook
 numpy==2.1.2
 optuna==4.2.1
 transformers==4.45.2
