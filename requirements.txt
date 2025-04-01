@@ -1,0 +1,8 @@
+datasets==3.0.1
+evaluate==0.4.3
+numpy==2.1.2
+optuna==4.2.1
+transformers==4.45.2
+torch==2.4.1
+
+
