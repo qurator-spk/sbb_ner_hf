@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import json
 
 #general
 task = "ner"
@@ -12,6 +13,7 @@ class Resource:
 
     def set_name(self):
         name = self.path.split("/")[-1]
+        name = name.split(".")[0]
         self.name = name
     
     def info(self):
@@ -27,7 +29,7 @@ class TrainingParams:
     num_train_epochs: int = 3
     weight_decay: int = 0.01
     warmup_steps: int = 100
-
+    
 @dataclass
 class OptimizeParams:
     #search parameters
@@ -54,3 +56,7 @@ class OptimizeParams:
             "borders": [16, 32, 64, 128, 256, 512, 1024]
         }
 """
+
+def save_train_config(model_out_path, training_params):
+    with open(model_out_path + '/parameter_settings.json', 'w') as fp:
+        json.dump(training_params.__dict__, fp, default=str)

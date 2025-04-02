@@ -1,9 +1,10 @@
 import torch
 from datetime import datetime
 from datasets import load_dataset, load_from_disk
-from transformers import AutoTokenizer, AutoModelForTokenClassification
+from transformers import AutoTokenizer, AutoModelForTokenClassification, AutoModelForSequenceClassification
 from transformers import TrainingArguments, Trainer
 from transformers import DataCollatorForTokenClassification
+import eval_opt
 import evaluate
 import numpy as np
 
@@ -14,11 +15,10 @@ def set_torch_device():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     return device
 
-def set_model_path(model_path):
+def set_model_path(model_path, dataset_path):
     #set path for saving model later
     now = datetime.now().strftime('%Y-%m-%d_%H-%M')
-    model_name = model_path.split("/")[-1]
-    out_path = f"{model_name}-finetuned-{task}-{now}"
+    out_path = f"{model_path}_{dataset_path}_{now}"
     return out_path
 
 def load_ner_dataset(dataset_path, dataset_source):
@@ -71,11 +71,13 @@ def prepare_dataset(dataset, tokenizer):
     tokenized_dataset = dataset.map(tokenize_and_align_labels, batched=True)
     return tokenized_dataset
 
+#dropout as described here: https://discuss.huggingface.co/t/changing-dropout-during-disltilbert-fine-tuning/88290/3 raises TypeError: XLMRobertaForSequenceClassification.__init__() got an unexpected keyword argument 'dropout'
+#dropout=train_params.dropout, attention_dropout=train_params.dropout
 def load_model(model_path, label_list):
     model = AutoModelForTokenClassification.from_pretrained(model_path, num_labels=len(label_list))
     return model
 
-def train_model(model_path, label_list, train_params, tokenized_dataset, tokenizer):
+def train_model(model, dataset, label_list, train_params, tokenized_dataset, tokenizer):
     
     def compute_metrics(p):
         metric = evaluate.load("seqeval") #load_metric has been removed, see https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524/2
@@ -101,9 +103,9 @@ def train_model(model_path, label_list, train_params, tokenized_dataset, tokeniz
             "accuracy": results["overall_accuracy"],
         }
 
-    model_out_path = set_model_path(model_path)
+    model_out_path = set_model_path(model.name, dataset.name)
     data_collator = DataCollatorForTokenClassification(tokenizer)
-    model = load_model(model_path, label_list)
+    model = load_model(model.path, label_list)
 
     args = TrainingArguments(
     model_out_path,
@@ -126,5 +128,5 @@ def train_model(model_path, label_list, train_params, tokenized_dataset, tokeniz
     )
 
     trainer.train()
-    return trainer
+    return trainer, model_out_path
     

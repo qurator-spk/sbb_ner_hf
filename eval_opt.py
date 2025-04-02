@@ -1,14 +1,17 @@
 import evaluate
 import numpy as np
+import optuna
 from transformers import AutoModelForTokenClassification, DataCollatorForTokenClassification, TrainingArguments, Trainer
 import train
+from seqeval.metrics import classification_report
+import itertools
 
 metric = evaluate.load("seqeval")
 
 def compute_metrics_per_tag(trainer, tokenized_dataset, label_list):
     # eval metrics for each category
     
-    predictions, labels, _ = trainer.predict(tokenized_dataset["validation"])
+    predictions, labels, _ = trainer.predict(tokenized_dataset["test"])
     predictions = np.argmax(predictions, axis=2)
     
     # Remove ignored index (special tokens)
@@ -20,9 +23,27 @@ def compute_metrics_per_tag(trainer, tokenized_dataset, label_list):
         [label_list[l] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
     ]
+
+    pred_flattened = list(itertools.chain(*true_predictions))
+    labels_flattened = list(itertools.chain(*true_labels))
+    class_report = classification_report([labels_flattened], [pred_flattened])
+
+    #print(len(true_predictions), len(true_labels), len(tokenized_dataset["test"]))
+    """
+    print("example from test dataset: " + str(tokenized_dataset["test"][0]["tokens"]))
+    print("true classification in test dataset: " + str(true_labels[0]))
+    print("predicted classification based on finetuned model: " + str(true_predictions[0]))
+    """
+
+    errors = []
+    for i, (pred, lab) in enumerate(zip(true_predictions, true_labels)):
+        if pred != lab:
+            errors.append([true_predictions[i], true_labels[i]])
+            
+    #print(errors[0])
+    print(classification_report([labels_flattened], [pred_flattened]))
     
-    results_per_tag = metric.compute(predictions=true_predictions, references=true_labels)
-    return results_per_tag
+    return class_report, errors
 
 def optimize(optimize_params, train_params, model_path, label_list, tokenizer, tokenized_dataset):
 
@@ -97,3 +118,43 @@ def optimize(optimize_params, train_params, model_path, label_list, tokenizer, t
     )
 
     return best_trial
+
+def save_class_report(class_report, out_format, model_out_path):
+    #html
+    if out_format == "html":
+        class_report_str = class_report.lstrip()
+        class_report_str = class_report_str[:-2]
+        class_report_str = class_report_str.replace("micro avg", "micro_avg")
+        class_report_str = class_report_str.replace("macro avg", "macro_avg")
+        class_report_str = class_report_str.replace("weighted avg", "weighted_avg")
+        class_report_str = class_report_str.replace('\n\n', '</td></tr><tr><td>')
+        class_report_str = class_report_str.replace('\n', '</td></tr><tr><td>')
+        class_report_str = ' '.join(class_report_str.split())
+        class_report_str = class_report_str.replace('<td> ', '<td>')
+        class_report_str = class_report_str.replace(' ', '</td><td>')
+        class_report_str = "<html><body><div><span><table><tr><td></td><td>" + class_report_str + "</td></tr></table></span></div></body></html>"
+        with open(model_out_path + "/classification_report.html", "w") as file:
+            file.write(class_report_str)
+    #md
+    elif out_format == "md":
+        class_report_str = class_report.lstrip()
+        class_report_str = class_report_str[:-2]
+        class_report_str = class_report_str.replace("micro avg", "micro_avg")
+        class_report_str = class_report_str.replace("macro avg", "macro_avg")
+        class_report_str = class_report_str.replace("weighted avg", "weighted_avg")
+        class_report_strs = class_report_str.split("\n\n")
+        
+        for i, each_str in enumerate(class_report_strs):
+            lines = each_str.split("\n")
+            for idx, line in enumerate(lines):
+                line =  ' '.join(line.split())
+                line = line.replace(" ", " | ")
+                line = "| " + line + " |\n"
+                lines[idx] = line
+            class_report_strs[i] = " ".join(lines)
+        
+        class_report_header = "| | precision | recall | f1-score | support |\n | --- | --- | --- | --- | --- |\n "
+        class_report_md = class_report_header + class_report_strs[1] + class_report_strs[2][:-1]
+        class_report_md
+        with open(model_out_path + "/classification_report.md", "w") as file:
+            file.write(class_report_md)
