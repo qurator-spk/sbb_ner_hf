@@ -18,6 +18,7 @@ label_list
 def clean_dataset_split(dataset_split):
     #read as df
     df_dataset = pd.DataFrame(dataset_split)
+    #print(df_dataset.describe)
     
     #identify sentence splits using EndOfSentence
     df_ends = df_dataset.loc[df_dataset["MISC"] == "EndOfSentence"]
@@ -69,9 +70,9 @@ def clean_dataset_split(dataset_split):
     return dataset_updated
 
 #clean all splits per function
-dataset_train_cleaned = clean_dataset_split(dataset_train)
 dataset_test_cleaned = clean_dataset_split(dataset_test)
 dataset_val_cleaned = clean_dataset_split(dataset_val)
+dataset_train_cleaned = clean_dataset_split(dataset_train)
 
 hisgermaner_dataset_cleaned = DatasetDict({
     "train":dataset_train_cleaned,

@@ -45,7 +45,7 @@ def compute_metrics_per_tag(trainer, tokenized_dataset, label_list):
     
     return class_report, errors
 
-def optimize(optimize_params, train_params, model_path, label_list, tokenizer, tokenized_dataset):
+def optimize(optimize_params, train_params, model_path, model_out_path, label_list, tokenizer, tokenized_dataset):
 
     def optuna_hp_space(trial):
         hp_space_dict = dict()
@@ -86,7 +86,7 @@ def optimize(optimize_params, train_params, model_path, label_list, tokenizer, t
             "accuracy": results["overall_accuracy"],
         }
 
-    model_out_path = train.set_model_path(model_path)
+    #model_out_path = train.set_model_path(model_path)
     data_collator = DataCollatorForTokenClassification(tokenizer)
 
     args = TrainingArguments(

@@ -4,6 +4,7 @@ notebook
 numpy==2.1.2
 optuna==4.2.1
 pandas==2.2.3
+seqeval==1.2.2
 transformers==4.45.2
 torch==2.4.1
 
