@@ -28,7 +28,10 @@ def clean_dataset_split(dataset_split):
     sent_ner_tags = []
     
     for i, end_idx in enumerate(df_ends_idx):
-        sent_start = df_ends_idx[i-1]
+        if i == 0:
+            sent_start = -1
+        else:
+            sent_start = df_ends_idx[i-1]
         sent_end = df_ends_idx[i]
         sent_tokens_check = df_dataset["TOKEN"][sent_start+1:sent_end+1].tolist()
         sent_ner_tags_check = df_dataset["NE-COARSE-LIT"][sent_start+1:sent_end+1].tolist()
@@ -56,6 +59,8 @@ def clean_dataset_split(dataset_split):
      'tokens': sent_tokens,
      'ner_tags': sent_ner_tags
     })
+
+    #df_dataset_updated.to_csv("data/hisgermaner_train.csv", quoting=csv.QUOTE_ALL)
 
     #transform data into Datasets format and set labels for ClassLabel based on label_list
     dataset_updated = Dataset.from_pandas(df_dataset_updated)

@@ -5,6 +5,7 @@ import os
 from datasets import Dataset, DatasetDict
 from datasets import Features, Sequence, Value, ClassLabel
 import itertools
+import numpy as np
 
 # read all files into one large dataframe
 cwd = os.getcwd()
@@ -19,22 +20,30 @@ tokens=[]
 tags=[]
 
 for file in files:
-    #read input as pd df
-    input = pd.read_csv(input_path + file, sep="\t", comment="#", quoting=csv.QUOTE_NONE)
+    if file not in ("SNP27646518-19330409-0-6-0-0.tsv", "SNP2436020X-19300313-0-3-0-0.tsv"): #pass file without sent splits
+        #read input as pd df
+        input = pd.read_csv(input_path + file, sep="\t", comment="#", quoting=csv.QUOTE_NONE)
 
-    #find sentence beginnings
-    sent_starts = input.loc[input["No."] == 0]
-    sent_starts_idx = sent_starts.index.tolist()
+        #find sentence beginnings
+        sent_starts = input.loc[input["No."] == 0]
+        sent_starts_idx = sent_starts.index.tolist()
 
-    #read into nested lists based on sentence structure
-    for i, index in enumerate(sent_starts_idx):
-        if index != 0:
-        
-            sent_tokens = input["TOKEN"][sent_starts_idx[i-1]:index-1].tolist()
-            sent_tags = input["NE-TAG"][sent_starts_idx[i-1]:index-1].tolist()
-    
-            tokens.append(sent_tokens)
-            tags.append(sent_tags)
+        #read into nested lists based on sentence structure
+        for i, index in enumerate(sent_starts_idx):
+            if i != 0:
+            
+                sent_tokens = input["TOKEN"][sent_starts_idx[i-1]:index].tolist()
+                sent_tags = input["NE-TAG"][sent_starts_idx[i-1]:index].tolist()
+
+                #remove nan tokens
+                if np.nan in sent_tokens:
+                    indexes = [i for i, x in enumerate(sent_tokens) if str(x) == "nan"]
+                    sent_tokens = [i for j, i in enumerate(sent_tokens) if j not in indexes]
+                    sent_tags = [i for j, i in enumerate(sent_tags) if j not in indexes]
+                    print(indexes)
+
+                tokens.append(sent_tokens)
+                tags.append(sent_tags)
 
 #this should equal the number of sentences in the dataset:
 #print(len(tokens), len(tags))
@@ -47,6 +56,8 @@ df_dataset = pd.DataFrame(
 'tokens': tokens,
 'ner_tags': tags
 })
+
+#df_dataset.to_csv("data/zefys.csv")
 
 # define label_lists
 tags_flattened = list(itertools.chain(*tags))
