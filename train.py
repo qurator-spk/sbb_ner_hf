@@ -1,42 +1,50 @@
 import torch
 from datetime import datetime
 from datasets import load_dataset, load_from_disk
-from transformers import AutoTokenizer, AutoModelForTokenClassification, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForTokenClassification  # , AutoModelForSequenceClassification
 from transformers import TrainingArguments, Trainer
 from transformers import DataCollatorForTokenClassification
-import eval_opt
+# import eval_opt
 import evaluate
 import numpy as np
 
 task = "ner"
 
+
 def set_torch_device():
-    #set GPU else CPU
+    # set GPU else CPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     return device
 
+
 def set_model_path(model_path, dataset_path):
-    #set path for saving model later
+    # set path for saving model later
     now = datetime.now().strftime('%Y-%m-%d_%H-%M')
     out_path = f"{model_path}_{dataset_path}_{now}"
     return out_path
 
+
 def load_ner_dataset(dataset_path, dataset_source):
     if dataset_source == "hf":
         # load a dataset (HF)
-        dataset = load_dataset(dataset_path)
+        dataset = load_dataset(dataset_path, trust_remote_code=True)
     elif dataset_source == "local":
         dataset = load_from_disk(dataset_path)
+    else:
+        raise RuntimeError("Unknown type of source.")
     return dataset
 
-def get_tokenizer(model_path):
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+def get_tokenizer(model_path, add_prefix_space=False):
+    tokenizer = AutoTokenizer.from_pretrained(model_path, add_prefix_space=add_prefix_space)
     return tokenizer
+
 
 def get_label_list(dataset):
     label_list = dataset["train"].features[f"{task}_tags"].feature.names
     return label_list
-    
+
+
 def prepare_dataset(dataset, tokenizer):
     label_all_tokens = True
     label_list = get_label_list(dataset)
@@ -71,20 +79,37 @@ def prepare_dataset(dataset, tokenizer):
     tokenized_dataset = dataset.map(tokenize_and_align_labels, batched=True)
     return tokenized_dataset
 
-#dropout as described here: https://discuss.huggingface.co/t/changing-dropout-during-disltilbert-fine-tuning/88290/3 raises TypeError: XLMRobertaForSequenceClassification.__init__() got an unexpected keyword argument 'dropout'
-#dropout=train_params.dropout, attention_dropout=train_params.dropout
+
+# dropout as described here:
+# https://discuss.huggingface.co/t/changing-dropout-during-disltilbert-fine-tuning/88290/3
+# raises TypeError: XLMRobertaForSequenceClassification.__init__() got an unexpected keyword argument 'dropout'
+# dropout=train_params.dropout, attention_dropout=train_params.dropout
 def load_model(model_path, label_list):
     model = AutoModelForTokenClassification.from_pretrained(model_path, num_labels=len(label_list))
     return model
 
-def train_model(model, dataset, label_list, train_params, tokenized_dataset, tokenizer):
-    
+
+def train_model(model_config, data_config, label_list, train_params, tokenized_dataset, tokenizer,
+                save_strategy="steps"):
+
+    epoch = 0
+    best_f1 = -1.0
+    best_result = None
+
     def compute_metrics(p):
-        metric = evaluate.load("seqeval") #load_metric has been removed, see https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524/2
-        
+        nonlocal best_f1
+        nonlocal best_result
+        nonlocal epoch
+
+        epoch += 1
+
+        metric = evaluate.load(
+            "seqeval")  # load_metric has been removed,
+        # see https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524/2
+
         predictions, labels = p
         predictions = np.argmax(predictions, axis=2)
-    
+
         # Remove ignored index (special tokens)
         true_predictions = [
             [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
@@ -94,39 +119,51 @@ def train_model(model, dataset, label_list, train_params, tokenized_dataset, tok
             [label_list[l] for (p, l) in zip(prediction, label) if l != -100]
             for prediction, label in zip(predictions, labels)
         ]
-
         results = metric.compute(predictions=true_predictions, references=true_labels, zero_division=0)
-        return {
+
+        result = {
             "precision": results["overall_precision"],
             "recall": results["overall_recall"],
             "f1": results["overall_f1"],
             "accuracy": results["overall_accuracy"],
         }
 
-    model_out_path = set_model_path(model.name, dataset.name)
-    data_collator = DataCollatorForTokenClassification(tokenizer)
-    model = load_model(model.path, label_list)
+        if best_f1 < result["f1"]:
+            best_f1 = result["f1"]
+            best_result = result
+            best_result["epoch"] = epoch
+            best_result["model"] = model_config.name
+            best_result["dataset"] = data_config.name
 
-    args = TrainingArguments(
-    model_out_path,
-    eval_strategy = train_params.eval_strategy,
-    learning_rate=train_params.learning_rate,
-    per_device_train_batch_size=train_params.batch_size,
-    per_device_eval_batch_size=train_params.batch_size,
-    num_train_epochs=train_params.num_train_epochs,
-    weight_decay=train_params.weight_decay,
+        return result
+
+    model_out_path = set_model_path(model_config.name, data_config.name)
+    data_collator = DataCollatorForTokenClassification(tokenizer)
+    model = load_model(model_config.path, label_list)
+
+    train_args = TrainingArguments(
+        model_out_path,
+        eval_strategy=train_params.eval_strategy,
+        save_strategy=save_strategy,
+        learning_rate=train_params.learning_rate,
+        per_device_train_batch_size=train_params.batch_size,
+        per_device_eval_batch_size=train_params.batch_size,
+        num_train_epochs=train_params.num_train_epochs,
+        weight_decay=train_params.weight_decay,
+        metric_for_best_model="f1",
+        greater_is_better=True,
+        load_best_model_at_end=True
     )
 
     trainer = Trainer(
-    model,
-    args,
-    train_dataset=tokenized_dataset["train"],
-    eval_dataset=tokenized_dataset["validation"],
-    data_collator=data_collator,
-    tokenizer=tokenizer,
-    compute_metrics=compute_metrics
+        model,
+        train_args,
+        train_dataset=tokenized_dataset["train"],
+        eval_dataset=tokenized_dataset["validation"],
+        data_collator=data_collator,
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics
     )
 
     trainer.train()
-    return trainer, model_out_path
-    
+    return trainer, model_out_path, best_result

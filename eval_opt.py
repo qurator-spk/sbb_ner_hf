@@ -8,7 +8,8 @@ import itertools
 
 metric = evaluate.load("seqeval")
 
-def compute_metrics_per_tag(trainer, tokenized_dataset, label_list):
+
+def compute_metrics_per_tag(trainer, tokenized_dataset, label_list, output_dict=False):
     # eval metrics for each category
     
     predictions, labels, _ = trainer.predict(tokenized_dataset["test"])
@@ -26,9 +27,9 @@ def compute_metrics_per_tag(trainer, tokenized_dataset, label_list):
 
     pred_flattened = list(itertools.chain(*true_predictions))
     labels_flattened = list(itertools.chain(*true_labels))
-    class_report = classification_report([labels_flattened], [pred_flattened])
+    class_report = classification_report([labels_flattened], [pred_flattened], output_dict=output_dict)
 
-    #print(len(true_predictions), len(true_labels), len(tokenized_dataset["test"]))
+    # print(len(true_predictions), len(true_labels), len(tokenized_dataset["test"]))
     """
     print("example from test dataset: " + str(tokenized_dataset["test"][0]["tokens"]))
     print("true classification in test dataset: " + str(true_labels[0]))
@@ -40,10 +41,11 @@ def compute_metrics_per_tag(trainer, tokenized_dataset, label_list):
         if pred != lab:
             errors.append([true_predictions[i], true_labels[i]])
             
-    #print(errors[0])
+    # print(errors[0])
     print(classification_report([labels_flattened], [pred_flattened]))
     
     return class_report, errors
+
 
 def optimize(optimize_params, train_params, model_path, model_out_path, label_list, tokenizer, tokenized_dataset):
 
@@ -63,7 +65,8 @@ def optimize(optimize_params, train_params, model_path, model_out_path, label_li
         return model
 
     def compute_metrics(p):
-        #load_metric has been removed, see https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524/2
+        # load_metric has been removed,
+        # see https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524/2
         
         predictions, labels = p
         predictions = np.argmax(predictions, axis=2)
@@ -86,7 +89,7 @@ def optimize(optimize_params, train_params, model_path, model_out_path, label_li
             "accuracy": results["overall_accuracy"],
         }
 
-    #model_out_path = train.set_model_path(model_path)
+    # model_out_path = train.set_model_path(model_path)
     data_collator = DataCollatorForTokenClassification(tokenizer)
 
     args = TrainingArguments(
