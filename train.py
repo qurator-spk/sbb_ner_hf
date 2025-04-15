@@ -28,7 +28,7 @@ def set_model_path(model_path, dataset_path):
 def load_ner_dataset(dataset_path, dataset_source):
     if dataset_source == "hf":
         # load a dataset (HF)
-        dataset = load_dataset(dataset_path, trust_remote_code=True)
+        dataset = load_dataset(dataset_path, cache_dir="./hf-dataset-cache/" + dataset_path, trust_remote_code=True)
     elif dataset_source == "local":
         dataset = load_from_disk(dataset_path)
     else:
@@ -87,6 +87,7 @@ def prepare_dataset(dataset, tokenizer):
 # dropout=train_params.dropout, attention_dropout=train_params.dropout
 def load_model(model_path, label_list):
     model = AutoModelForTokenClassification.from_pretrained(model_path, num_labels=len(label_list))
+                                                            # cache_dir=".hf-model-cache/" + model_path)
     return model
 
 

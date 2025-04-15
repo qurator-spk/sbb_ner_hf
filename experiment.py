@@ -74,6 +74,12 @@ def process_report(best_result, class_report):
     return best_result
 
 
+batch_sizes = [32]
+learning_rates = [2e-5]
+weight_decays = [0.01]
+warmup_steps = [100]
+
+
 @click.command()
 @click.argument('result-file', type=click.Path())
 def main(result_file):
@@ -87,11 +93,15 @@ def main(result_file):
     print(models)
     print(datasets)
 
-    for model_def, dataset_def in itertools.product(models, datasets):
+    for model_def, dataset_def, batch_size, learning_rate, weight_decay, warmup_step in (
+            itertools.product(models, datasets, batch_sizes, learning_rates, weight_decays, warmup_steps)):
 
         train_params = config.TrainingParams()
 
-        train_params.batch_size = 32
+        train_params.batch_size = batch_size
+        train_params.learning_rate = learning_rate
+        train_params.weight_decay = weight_decay
+        train_params.warmup_steps = warmup_step
         train_params.num_train_epochs = max_epochs
 
         exp_ID = "EXP_" + hashlib.sha256((str(model_def) + str(dataset_def) + str(train_params)).encode()).hexdigest()

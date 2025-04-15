@@ -25,10 +25,10 @@ class Resource:
 class TrainingParams:
     batch_size: int = 16
     eval_strategy: str = "epoch"
-    learning_rate: int = 2e-5
+    learning_rate: float = 2e-5
     num_train_epochs: int = 3
-    weight_decay: int = 0.01
-    warmup_steps: int = 100
+    weight_decay: float = 0.01
+    warmup_steps: float = 100
     
 @dataclass
 class OptimizeParams:
