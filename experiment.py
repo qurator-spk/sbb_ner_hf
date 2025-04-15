@@ -144,6 +144,8 @@ def main(result_file, max_epochs):
         else:
             results = pd.concat([results, pd.DataFrame([result])])
 
+        results.to_pickle(result_file)
+
     results.to_pickle(result_file)
 
 
