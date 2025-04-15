@@ -13,10 +13,10 @@ models = [
 #    {"path": "flair/ner-german", "add_prefix_space": False},
     {"path": "dbmdz/bert-tiny-historic-multilingual-cased", "add_prefix_space": False},
     {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
-    #{"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
-    #{"path": "FacebookAI/roberta-base", "add_prefix_space": True},
-    #{"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
-    #{"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
+    {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
+    {"path": "FacebookAI/roberta-base", "add_prefix_space": True},
+    {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
+    {"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
 ]
 
 datasets = [
@@ -82,16 +82,15 @@ warmup_steps = [100]
 
 @click.command()
 @click.argument('result-file', type=click.Path())
-def main(result_file):
-
-    max_epochs = 1
+@click.option('--max-epochs', type=int, default=1)
+def main(result_file, max_epochs):
 
     results = None
     if os.path.exists(result_file):
         results = pd.read_pickle(result_file)
 
-    print(models)
-    print(datasets)
+    # print(models)
+    # print(datasets)
 
     for model_def, dataset_def, batch_size, learning_rate, weight_decay, warmup_step in (
             itertools.product(models, datasets, batch_sizes, learning_rates, weight_decays, warmup_steps)):
@@ -144,11 +143,6 @@ def main(result_file):
             results = pd.DataFrame([result])
         else:
             results = pd.concat([results, pd.DataFrame([result])])
-
-        # import ipdb;ipdb.set_trace()
-
-        #if len(results) > 2:
-        #    break
 
     results.to_pickle(result_file)
 
