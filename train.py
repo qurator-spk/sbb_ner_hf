@@ -1,7 +1,8 @@
 import torch
 from datetime import datetime
 from datasets import load_dataset, load_from_disk
-from transformers import AutoTokenizer, AutoModelForTokenClassification  # , AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForTokenClassification, \
+    EarlyStoppingCallback  # , AutoModelForSequenceClassification
 from transformers import TrainingArguments, Trainer
 from transformers import DataCollatorForTokenClassification
 # import eval_opt
@@ -90,7 +91,7 @@ def load_model(model_path, label_list):
 
 
 def train_model(model_config, data_config, label_list, train_params, tokenized_dataset, tokenizer,
-                save_strategy="steps"):
+                save_strategy="steps", exp_model_path=None):
 
     epoch = 0
     best_f1 = -1.0
@@ -126,6 +127,7 @@ def train_model(model_config, data_config, label_list, train_params, tokenized_d
             "recall": results["overall_recall"],
             "f1": results["overall_f1"],
             "accuracy": results["overall_accuracy"],
+            "f1_early": round(results["overall_f1"], 2)
         }
 
         if best_f1 < result["f1"]:
@@ -134,6 +136,7 @@ def train_model(model_config, data_config, label_list, train_params, tokenized_d
             best_result["epoch"] = epoch
             best_result["model"] = model_config.name
             best_result["dataset"] = data_config.name
+            best_result["train_params"] = str(train_params)
 
         return result
 
@@ -142,7 +145,7 @@ def train_model(model_config, data_config, label_list, train_params, tokenized_d
     model = load_model(model_config.path, label_list)
 
     train_args = TrainingArguments(
-        model_out_path,
+        model_out_path if exp_model_path is None else exp_model_path,
         eval_strategy=train_params.eval_strategy,
         save_strategy=save_strategy,
         learning_rate=train_params.learning_rate,
@@ -150,7 +153,7 @@ def train_model(model_config, data_config, label_list, train_params, tokenized_d
         per_device_eval_batch_size=train_params.batch_size,
         num_train_epochs=train_params.num_train_epochs,
         weight_decay=train_params.weight_decay,
-        metric_for_best_model="f1",
+        metric_for_best_model="f1_early",
         greater_is_better=True,
         load_best_model_at_end=True
     )
@@ -162,7 +165,8 @@ def train_model(model_config, data_config, label_list, train_params, tokenized_d
         eval_dataset=tokenized_dataset["validation"],
         data_collator=data_collator,
         tokenizer=tokenizer,
-        compute_metrics=compute_metrics
+        compute_metrics=compute_metrics,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=2)]
     )
 
     trainer.train()
