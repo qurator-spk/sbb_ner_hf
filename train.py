@@ -74,7 +74,7 @@ def prepare_dataset(dataset, tokenizer):
 #dropout as described here: https://discuss.huggingface.co/t/changing-dropout-during-disltilbert-fine-tuning/88290/3 raises TypeError: XLMRobertaForSequenceClassification.__init__() got an unexpected keyword argument 'dropout'
 #dropout=train_params.dropout, attention_dropout=train_params.dropout
 def load_model(model_path, label_list):
-    model = AutoModelForTokenClassification.from_pretrained(model_path, num_labels=len(label_list))
+    model = AutoModelForTokenClassification.from_pretrained(model_path, num_labels=len(label_list), ignore_mismatched_sizes=True)
     return model
 
 def train_model(model, dataset, label_list, train_params, tokenized_dataset, tokenizer):
