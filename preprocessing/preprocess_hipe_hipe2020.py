@@ -76,11 +76,11 @@ def clean_dataset_split(input):
     df_dataset_updated = df_dataset_updated.dropna()
 
     #save last split as csv for result checking
-    df_dataset_updated.to_csv("data/hipe2020_test.csv", quoting=csv.QUOTE_ALL)
+    #df_dataset_updated.to_csv("data/hipe2020_test.csv", quoting=csv.QUOTE_ALL)
     
     #transform data into Datasets format and set labels for ClassLabel based on label_list
     dataset_updated = Dataset.from_pandas(df_dataset_updated)
-    dataset_updated = dataset_updated.cast_column("ner_tags", Sequence(ClassLabel(names=label_list)))
+    #dataset_updated = dataset_updated.cast_column("ner_tags", Sequence(ClassLabel(names=label_list)))
 
     return dataset_updated
 
@@ -96,4 +96,4 @@ newseye_dataset_cleaned = DatasetDict({
     "test":dataset_test_cleaned
 })
 
-newseye_dataset_cleaned.save_to_disk("data/hipe2020.hf")
+newseye_dataset_cleaned.save_to_disk("data/hipe2020_not-casted.hf")

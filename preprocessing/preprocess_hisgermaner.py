@@ -65,7 +65,7 @@ def clean_dataset_split(dataset_split):
 
     #transform data into Datasets format and set labels for ClassLabel based on label_list
     dataset_updated = Dataset.from_pandas(df_dataset_updated)
-    dataset_updated = dataset_updated.cast_column("ner_tags", Sequence(ClassLabel(names=label_list)))
+    #dataset_updated = dataset_updated.cast_column("ner_tags", Sequence(ClassLabel(names=label_list)))
 
     return dataset_updated
 
@@ -80,4 +80,4 @@ hisgermaner_dataset_cleaned = DatasetDict({
     "test":dataset_test_cleaned
 })
 
-hisgermaner_dataset_cleaned.save_to_disk("data/hisgermaner.hf")
+hisgermaner_dataset_cleaned.save_to_disk("data/hisgermaner_not-casted.hf")
