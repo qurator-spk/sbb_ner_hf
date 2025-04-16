@@ -1,5 +1,29 @@
-from datasets import Dataset, DatasetDict, Features, ClassLabel, Sequence
+from datasets import Dataset, DatasetDict, Features, ClassLabel, Sequence, concatenate_datasets
 import pandas as pd
+
+def get_label_list(labels):
+    # copied from https://github.com/huggingface/transformers/blob/66fd3a8d626a32989f4569260db32785c6cbf42a/examples/pytorch/token-classification/run_ner.py#L320
+    unique_labels = set()
+    for label in labels:
+        unique_labels = unique_labels | set(label)
+    label_list = list(unique_labels)
+    label_list.sort()
+    return label_list
+    
+def merge_ds(list_of_datasets):
+    for i, ds in enumerate(list_of_datasets):
+        if i != (len(list_of_datasets)-1): #if the end of list is reached, do not try to merge any further
+            if i == 0: #at the beginning, merge the first two datasets...
+                merged_dataset = DatasetDict({"train": concatenate_datasets([ds["train"], list_of_datasets[i+1]["train"]]),
+                                             "test": concatenate_datasets([ds["test"], list_of_datasets[i+1]["test"]]),
+                                             "validation": concatenate_datasets([ds["validation"], list_of_datasets[i+1]["validation"]])})
+            else: #... then, merge all other together with the previously merged dataset
+                merged_dataset = DatasetDict({"train": concatenate_datasets([merged_dataset["train"], list_of_datasets[i+1]["train"]]),
+                                             "test": concatenate_datasets([merged_dataset["test"], list_of_datasets[i+1]["test"]]),
+                                             "validation": concatenate_datasets([merged_dataset["validation"], list_of_datasets[i+1]["validation"]])})
+        
+    label_list = get_label_list(merged_dataset["train"]["ner_tags"]) 
+    return merged_dataset
 
 #create mapping dict: num > label
 def create_mapping_dict(label_list):
