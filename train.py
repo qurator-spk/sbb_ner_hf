@@ -92,7 +92,7 @@ def load_model(model_path, label_list):
     return model
 
 
-def train_model(model_config, data_config, label_list, train_params, tokenized_dataset, tokenizer,
+def train_model(model_config, data_config_name, label_list, train_params, tokenized_dataset, tokenizer,
                 save_strategy="steps", exp_model_path=None):
 
     epoch = 0
@@ -137,12 +137,12 @@ def train_model(model_config, data_config, label_list, train_params, tokenized_d
             best_result = result
             best_result["epoch"] = epoch
             best_result["model"] = model_config.name
-            best_result["dataset"] = data_config.name
+            best_result["train"] = data_config_name
             best_result["train_params"] = str(train_params)
 
         return result
 
-    model_out_path = set_model_path(model_config.name, data_config.name)
+    model_out_path = set_model_path(model_config.name, data_config_name)
     data_collator = DataCollatorForTokenClassification(tokenizer)
     model = load_model(model_config.path, label_list)
 

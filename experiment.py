@@ -1,9 +1,12 @@
-import pandas as pd
+# import pandas as pd
 import torch
 
 import config
 import train
 import eval_opt
+from merge_datasets import merge_ds, get_label_list as get_merged_label_list
+from datasets import Sequence, ClassLabel
+
 import click
 import os
 import pandas as pd
@@ -12,26 +15,184 @@ import hashlib
 
 models = [
 # #  {"path": "flair/ner-german", "add_prefix_space": False},
-#    {"path": "dbmdz/electra-base-german-europeana-cased-discriminator",
-#     "add_prefix_space": True, "ignore_mismatched_sizes": True},
-#    {"path": "dbmdz/bert-tiny-historic-multilingual-cased", "add_prefix_space": False},
-#    {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
-#    {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
+    {"path": "dbmdz/electra-base-german-europeana-cased-discriminator",
+     "add_prefix_space": True, "ignore_mismatched_sizes": True},
+    {"path": "dbmdz/bert-tiny-historic-multilingual-cased", "add_prefix_space": False},
+    {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
+    {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
 #    {"path": "FacebookAI/roberta-base", "add_prefix_space": True},
-#    {"path": "FacebookAI/xlm-roberta-base", "add_prefix_space": True},
+    {"path": "FacebookAI/xlm-roberta-base", "add_prefix_space": True},
 #    {"path": "deepset/gbert-base", "add_prefix_space": True},
-#    {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
+    {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
 #    {"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
 ]
 
-datasets = [
+dataset_defs = [
     {"name": "hipe2020", "path": "data/hipe2020_20250415.hf", "source": "local"},
+    {"name": "hipe2020-nc", "path": "data/hipe2020_not-casted.hf", "source": "local"},
+
     {"name": "zefys2025", "path": "data/zefys2025_20250404.hf", "source": "local"},
+    {"name": "zefys2025-nc", "path": "data/zefys2025_not-casted.hf", "source": "local"},
+
     {"name": "newseye", "path": "data/newseye_20250404.hf", "source": "local"},
+
     {"name": "hisgerman", "path": "data/hisgermaner_20250404.hf", "source": "local"},
+    {"name": "hisgerman-nc", "path": "data/hisgermaner_not-casted.hf", "source": "local"},
+
     {"name": "conll2003", "path": "eriktks/conll2003", "source": "hf"},
+
     {"name": "GermEval",  "path": "GermanEval/germeval_14", "source": "hf"}
 ]
+
+data_configs_single = [
+    {"train": {"name": "hipe2020", "def": ["hipe2020"]}, "test": [{"name": "hipe2020", "def": ["hipe2020"]}]},
+
+    {"train": {"name": "zefys2025", "def": ["zefys2025"]}, "test": [{"name": "zefys2025", "def": ["zefys2025"]}]},
+
+    {"train": {"name": "newseye", "def": ["newseye"]}, "test": [{"name": "newseye", "def": ["newseye"]}]},
+
+    {"train": {"name": "hisgerman", "def": ["hisgerman"]}, "test": [{"name": "hisgerman", "def": ["hisgerman"]}]},
+
+    {"train": {"name": "conll2003", "def": ["conll2003"]}, "test": [{"name": "conll2003", "def": ["conll2003"]}]},
+
+    {"train": {"name": "GermEval", "def": ["GermEval"]}, "test": [{"name": "GermEval", "def": ["GermEval"]}]},
+]
+
+data_configs_merged = [
+    {
+        "train": {"name": "hipe2020+zefys2025", "def": ["hipe2020-nc", "zefys2025-nc"]},
+        "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc"]}]
+    },
+    {
+        "train": {"name": "hisgerman+zefys2025", "def": ["hisgerman-nc", "zefys2025-nc"]},
+        "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc"]}]
+    },
+    {
+        "train": {"name": "hisgerman+hipe2020", "def": ["hisgerman-nc", "hipe2020-nc"]},
+        "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
+                 {"name": "hipe2020", "def": ["hipe2020-nc"]}]
+    },
+    {
+        "train": {"name": "hisgerman+hipe2020+zefys2025", "def": ["hisgerman-nc", "hipe2020-nc", "zefys2025-nc"]},
+        "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
+                 {"name": "hisgerman", "def": ["hisgerman-nc"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc"]}]
+    }
+]
+
+data_configs = data_configs_merged
+
+batch_sizes = [32]
+learning_rates = [2e-5]
+# batch_sizes = [32, 64, 96]
+# learning_rates = [2e-5, 1e-4, 1e-3]
+weight_decays = [0.01]
+warmup_steps = [100]
+
+
+@click.command()
+@click.argument('result-file', type=click.Path())
+@click.option('--max-epochs', type=int, default=1)
+def main(result_file, max_epochs):
+
+    results = None
+    if os.path.exists(result_file):
+        results = pd.read_pickle(result_file)
+
+    train.set_torch_device()
+
+    for model_def, data_config, batch_size, learning_rate, weight_decay, warmup_step in (
+            itertools.product(models, data_configs, batch_sizes, learning_rates, weight_decays, warmup_steps)):
+
+        try:
+            train_params = config.TrainingParams()
+
+            train_params.batch_size = batch_size
+            train_params.learning_rate = learning_rate
+            train_params.weight_decay = weight_decay
+            train_params.warmup_steps = warmup_step
+            train_params.num_train_epochs = max_epochs
+
+            exp_ID = "EXP_" + hashlib.sha256((str(model_def) + str(data_config) + str(train_params)).encode()).hexdigest()
+
+            # noinspection PyTypeChecker
+            if results is not None and sum(results.exp_ID == exp_ID) > 0:
+                print("Skipping {} - experiment already exists.".format(exp_ID))
+                continue
+
+            model_config = config.Resource(path=model_def["path"], source="hf")
+            model_config.set_name()
+            print(model_config.info())
+
+            tokenizer = train.get_tokenizer(model_def["path"], model_def["add_prefix_space"],
+                                            ignore_mismatched_sizes=model_def["ignore_mismatched_sizes"]
+                                            if "ignore_mismatched_sizes" in model_def else False)
+
+            train_config = data_config["train"]
+            test_configs = data_config["test"]
+
+            train_tokenized_data, train_label_list = load_dataset_config(train_config, tokenizer)
+
+            trained_ner_model, model_out_path, best_result = (
+                train.train_model(model_config, train_config["name"], train_label_list, train_params,
+                                  train_tokenized_data, tokenizer, save_strategy="epoch", exp_model_path=exp_ID))
+
+            for test_config in test_configs:
+
+                test_tokenized_data, _ = load_dataset_config(test_config, tokenizer)
+
+                class_report, errors = eval_opt.compute_metrics_per_tag(trained_ner_model, test_tokenized_data,
+                                                                        train_label_list,
+                                                                        output_dict=True)
+
+                result = process_report(best_result.copy(), class_report)
+
+                result['test'] = test_config["name"]
+                result["exp_ID"] = exp_ID
+
+                if results is None:
+                    results = pd.DataFrame([result])
+                else:
+                    results = pd.concat([results, pd.DataFrame([result])])
+
+            results.to_pickle(result_file)
+        except torch.OutOfMemoryError as e:
+            print("Out of memory.")
+
+    results.to_pickle(result_file)
+
+
+def load_dataset_config(data_config, tokenizer):
+    datasets = []
+    for dataset_def in data_config["def"]:
+
+        dataset_def = get_dataset_def(dataset_def)
+
+        dataset_config = config.Resource(path=dataset_def["path"], source=dataset_def["source"])
+        dataset_config.set_name()
+
+        print(dataset_config.info())
+
+        datasets.append(train.load_ner_dataset(dataset_config.path, dataset_config.source))
+
+    merged_dataset = merge_ds(datasets)
+    merged_label_list = get_merged_label_list(merged_dataset["train"]["ner_tags"])
+    merged_dataset = merged_dataset.cast_column("ner_tags", Sequence(ClassLabel(names=merged_label_list)))
+
+    tokenized_dataset = train.prepare_dataset(merged_dataset, tokenizer)
+
+    return tokenized_dataset, merged_label_list
+
+
+def get_dataset_def(dataset_def):
+
+    for d in dataset_defs:
+        if d["name"] == dataset_def:
+            return d
+
+    raise RuntimeError("Unknown dataset definition: {}.".format(dataset_def))
 
 
 def process_report(best_result, class_report):
@@ -78,86 +239,6 @@ def process_report(best_result, class_report):
         best_result['ORG_recall_test'] = class_report['ORG']['recall']
 
     return best_result
-
-
-batch_sizes = [32,64,96]
-learning_rates = [2e-5, 1e-4, 1e-3]
-weight_decays = [0.01]
-warmup_steps = [100]
-
-
-@click.command()
-@click.argument('result-file', type=click.Path())
-@click.option('--max-epochs', type=int, default=1)
-def main(result_file, max_epochs):
-
-    results = None
-    if os.path.exists(result_file):
-        results = pd.read_pickle(result_file)
-
-    # print(models)
-    # print(datasets)
-
-    for model_def, dataset_def, batch_size, learning_rate, weight_decay, warmup_step in (
-            itertools.product(models, datasets, batch_sizes, learning_rates, weight_decays, warmup_steps)):
-
-        try:
-            train_params = config.TrainingParams()
-
-            train_params.batch_size = batch_size
-            train_params.learning_rate = learning_rate
-            train_params.weight_decay = weight_decay
-            train_params.warmup_steps = warmup_step
-            train_params.num_train_epochs = max_epochs
-
-            exp_ID = "EXP_" + hashlib.sha256((str(model_def) + str(dataset_def) + str(train_params)).encode()).hexdigest()
-
-            if results is not None and sum(results.exp_ID == exp_ID) > 0:
-                print("Skipping {} - experiment already exists.".format(exp_ID))
-                continue
-
-            model_config = config.Resource(path=model_def["path"], source="hf")
-            model_config.set_name()
-            print(model_config.info())
-
-            dataset_config = config.Resource(path=dataset_def["path"], source=dataset_def["source"])
-            dataset_config.set_name()
-
-            print(dataset_config.info())
-
-            train.set_torch_device()
-
-            ner_dataset = train.load_ner_dataset(dataset_config.path, dataset_config.source)
-
-            tokenizer = train.get_tokenizer(model_def["path"], model_def["add_prefix_space"],
-                                            ignore_mismatched_sizes=model_def["ignore_mismatched_sizes"]
-                                            if "ignore_mismatched_sizes" in model_def else False)
-
-            tokenized_dataset = train.prepare_dataset(ner_dataset, tokenizer)
-
-            label_list = train.get_label_list(ner_dataset)
-
-            trained_ner_model, model_out_path, best_result = (
-                train.train_model(model_config, dataset_config, label_list, train_params,
-                                  tokenized_dataset, tokenizer, save_strategy="epoch", exp_model_path=exp_ID))
-
-            class_report, errors = eval_opt.compute_metrics_per_tag(trained_ner_model, tokenized_dataset, label_list,
-                                                                    output_dict=True)
-
-            result = process_report(best_result, class_report)
-
-            result["exp_ID"] = exp_ID
-
-            if results is None:
-                results = pd.DataFrame([result])
-            else:
-                results = pd.concat([results, pd.DataFrame([result])])
-
-            results.to_pickle(result_file)
-        except torch.OutOfMemoryError as e:
-            print("Out of memory.")
-
-    results.to_pickle(result_file)
 
 
 if __name__ == '__main__':
