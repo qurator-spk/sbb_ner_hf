@@ -3,16 +3,16 @@ import csv
 import numpy as np 
 from datasets import Dataset, DatasetDict
 from datasets import Sequence, ClassLabel
-from datasets import concatenate_datasets
 
-input_path = "../data/hipe2022_not-preprocessed/newseye/"
-dev_dataset = pd.read_csv(input_path + "hipe-newseye-dev-de.tsv", sep="\t", comment="#", quoting=csv.QUOTE_NONE)
-dev2_dataset = pd.read_csv(input_path + "hipe-newseye-dev2-de.tsv", sep="\t", comment="#", quoting=csv.QUOTE_NONE)
-test_dataset = pd.read_csv(input_path + "hipe-newseye-test-de.tsv", sep="\t", comment="#", quoting=csv.QUOTE_NONE)
-train_dataset = pd.read_csv(input_path + "hipe-newseye-train-de.tsv", sep="\t", comment="#", quoting=csv.QUOTE_NONE)
+input_path = "data/hipe_hipe2020_not_preprocessed/"
+dev_dataset = pd.read_csv(input_path + "hipe2020_dev.tsv", sep="\t", comment="#", quoting=csv.QUOTE_NONE)
+test_dataset = pd.read_csv(input_path + "hipe2020_test.tsv", sep="\t", comment="#", quoting=csv.QUOTE_NONE)
+train_dataset = pd.read_csv(input_path + "hipe2020_train.tsv", sep="\t", comment="#", quoting=csv.QUOTE_NONE)
 
 label_list = set([x for x in train_dataset["NE-COARSE-LIT"] if x not in [None, np.nan]]) #to do: remove nan - also in labels!
-label_list = [x for x in label_list]
+label_list = [x.upper() for x in label_list]
+label_list = ["B-PER" if x=="B-PERS" else x for x in label_list]
+label_list = ["I-PER" if x=="I-PERS" else x for x in label_list]
 print(label_list)
 
 # read TOKEN and NE-TAG over all files as one list, split into sentences by using No. col
@@ -25,6 +25,9 @@ tags=[]
 def clean_dataset_split(input):
 
     input["MISC"] = input["MISC"].str.split("|")
+    input["NE-COARSE-LIT"] = input["NE-COARSE-LIT"].str.upper()
+    input["NE-COARSE-LIT"] = input["NE-COARSE-LIT"].replace("B-PERS", "B-PER")
+    input["NE-COARSE-LIT"] = input["NE-COARSE-LIT"].replace("I-PERS", "I-PER")
 
     #check if "EndOfSentence" in MISC col
     input_sent_ends = input.loc[input['MISC'].explode().eq('EndOfSentence').loc[lambda x: x].index]
@@ -47,6 +50,10 @@ def clean_dataset_split(input):
             indexes = [i for i, x in enumerate(sent_ner_tags_check) if str(x) == "nan"]
             sent_tokens_check = [i for j, i in enumerate(sent_tokens_check) if j not in indexes]
             sent_ner_tags_check = [i for j, i in enumerate(sent_ner_tags_check) if j not in indexes]
+        if np.nan in sent_tokens_check:
+            indexes = [i for i, x in enumerate(sent_tokens_check) if str(x) == "nan"]
+            sent_tokens_check = [i for j, i in enumerate(sent_tokens_check) if j not in indexes]
+            sent_ner_tags_check = [i for j, i in enumerate(sent_ner_tags_check) if j not in indexes]
 
         sent_tokens.append(sent_tokens_check)
         sent_ner_tags.append(sent_ner_tags_check)
@@ -65,8 +72,11 @@ def clean_dataset_split(input):
      'tokens': sent_tokens,
      'ner_tags': sent_ner_tags
     })
+    
+    df_dataset_updated = df_dataset_updated.dropna()
 
-    #df_dataset_updated.to_csv("data/newseye_train.csv", quoting=csv.QUOTE_ALL)
+    #save last split as csv for result checking
+    #df_dataset_updated.to_csv("data/hipe2020_test.csv", quoting=csv.QUOTE_ALL)
     
     #transform data into Datasets format and set labels for ClassLabel based on label_list
     dataset_updated = Dataset.from_pandas(df_dataset_updated)
@@ -75,17 +85,15 @@ def clean_dataset_split(input):
     return dataset_updated
 
 #clean all splits per function
-dataset_test_cleaned = clean_dataset_split(test_dataset)
+
 dataset_val_cleaned = clean_dataset_split(dev_dataset)
-dataset_val2_cleaned = clean_dataset_split(dev2_dataset)
 dataset_train_cleaned = clean_dataset_split(train_dataset)
-
-
+dataset_test_cleaned = clean_dataset_split(test_dataset)
 
 newseye_dataset_cleaned = DatasetDict({
     "train":dataset_train_cleaned,
-    "validation": concatenate_datasets([dataset_val_cleaned, dataset_val2_cleaned]),
+    "validation": dataset_val_cleaned,
     "test":dataset_test_cleaned
 })
 
-newseye_dataset_cleaned.save_to_disk("data/newseye_not-casted.hf")
+newseye_dataset_cleaned.save_to_disk("data/hipe2020_not-casted.hf")

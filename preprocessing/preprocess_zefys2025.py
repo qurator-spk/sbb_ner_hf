@@ -70,7 +70,7 @@ label_list = list(set(tags_flattened))
 
 # transform data into Datasets format and set labels for ClassLabel based on label_list
 zefys_dataset = Dataset.from_pandas(df_dataset)
-zefys_dataset = zefys_dataset.cast_column("ner_tags", Sequence(ClassLabel(names=label_list)))
+#zefys_dataset = zefys_dataset.cast_column("ner_tags", Sequence(ClassLabel(names=label_list)))
 
 # add train/test/val split to dataset
 # https://discuss.huggingface.co/t/how-to-split-main-dataset-into-train-dev-test-as-datasetdict/1090/2
@@ -88,7 +88,7 @@ zefys_dataset_splits = DatasetDict({
 print(zefys_dataset_splits)
 
 #https://stackoverflow.com/a/72021864
-zefys_dataset_splits.save_to_disk("data/zefys2025.hf")
+zefys_dataset_splits.save_to_disk("data/zefys2025_not-casted.hf")
 
 """
 #how to (re-)load?
