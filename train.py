@@ -36,8 +36,9 @@ def load_ner_dataset(dataset_path, dataset_source):
     return dataset
 
 
-def get_tokenizer(model_path, add_prefix_space=False):
-    tokenizer = AutoTokenizer.from_pretrained(model_path, add_prefix_space=add_prefix_space)
+def get_tokenizer(model_path, add_prefix_space=False, ignore_mismatched_sizes=False):
+    tokenizer = AutoTokenizer.from_pretrained(model_path, add_prefix_space=add_prefix_space,
+                                              ignore_mismatched_sizes=ignore_mismatched_sizes)
     return tokenizer
 
 
