@@ -4,7 +4,7 @@ import torch
 import config
 import train
 import eval_opt
-from merge_datasets import merge_ds, get_label_list as get_merged_label_list
+from merge_datasets import drop_ner_labels,merge_ds, get_label_list as get_merged_label_list
 from datasets import Sequence, ClassLabel
 
 import click
@@ -15,16 +15,16 @@ import hashlib
 
 models = [
 # #  {"path": "flair/ner-german", "add_prefix_space": False},
-    {"path": "dbmdz/electra-base-german-europeana-cased-discriminator",
-     "add_prefix_space": True, "ignore_mismatched_sizes": True},
+#     {"path": "dbmdz/electra-base-german-europeana-cased-discriminator",
+#      "add_prefix_space": True, "ignore_mismatched_sizes": True},
     {"path": "dbmdz/bert-tiny-historic-multilingual-cased", "add_prefix_space": False},
-    {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
-    {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
-#    {"path": "FacebookAI/roberta-base", "add_prefix_space": True},
-    {"path": "FacebookAI/xlm-roberta-base", "add_prefix_space": True},
-#    {"path": "deepset/gbert-base", "add_prefix_space": True},
-    {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
-#    {"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
+    # {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
+    # {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
+    # {"path": "FacebookAI/roberta-base", "add_prefix_space": True},
+    # {"path": "FacebookAI/xlm-roberta-base", "add_prefix_space": True},
+    # {"path": "deepset/gbert-base", "add_prefix_space": True},
+    # {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
+    # {"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
 ]
 
 dataset_defs = [
@@ -33,6 +33,7 @@ dataset_defs = [
 
     {"name": "zefys2025", "path": "data/zefys2025_20250404.hf", "source": "local"},
     {"name": "zefys2025-nc", "path": "data/zefys2025_not-casted.hf", "source": "local"},
+    {"name": "zefys2025-nc-wls", "path": "data/zefys2025_with_last_sents.hf", "source": "local"},
 
     {"name": "newseye", "path": "data/newseye_20250404.hf", "source": "local"},
 
@@ -41,44 +42,89 @@ dataset_defs = [
 
     {"name": "conll2003", "path": "eriktks/conll2003", "source": "hf"},
 
-    {"name": "GermEval",  "path": "GermanEval/germeval_14", "source": "hf"}
+    {"name": "GermEval",  "path": "GermanEval/germeval_14", "source": "hf"},
+
+    {"name": "europeana-lft", "path": "data/europeana_lft.hf", "source": "local"},
+    {"name": "europeana-onb", "path": "data/europeana_onb.hf", "source": "local"},
+    {"name": "neiss-arendt", "path": "data/neiss_arendt.hf", "source": "local"},
+    {"name": "neiss-sturm", "path": "data/neiss_sturm.hf", "source": "local"}
 ]
 
 data_configs_single = [
-    {"train": {"name": "hipe2020", "def": ["hipe2020"]}, "test": [{"name": "hipe2020", "def": ["hipe2020"]}]},
+    {"train": {"name": "hipe2020", "def": ["hipe2020-nc"]},
+     "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]}]},
 
-    {"train": {"name": "zefys2025", "def": ["zefys2025"]}, "test": [{"name": "zefys2025", "def": ["zefys2025"]}]},
+    {"train": {"name": "zefys2025", "def": ["zefys2025-nc-wls"]},
+     "test": [{"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]},
 
-    {"train": {"name": "newseye", "def": ["newseye"]}, "test": [{"name": "newseye", "def": ["newseye"]}]},
+    # {"train": {"name": "newseye", "def": ["newseye"]}, "test": [{"name": "newseye", "def": ["newseye"]}]},
 
-    {"train": {"name": "hisgerman", "def": ["hisgerman"]}, "test": [{"name": "hisgerman", "def": ["hisgerman"]}]},
+    {"train": {"name": "hisgerman", "def": ["hisgerman-nc"]}, "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]}]},
 
-    {"train": {"name": "conll2003", "def": ["conll2003"]}, "test": [{"name": "conll2003", "def": ["conll2003"]}]},
+    # {"train": {"name": "conll2003", "def": ["conll2003"]}, "test": [{"name": "conll2003", "def": ["conll2003"]}]},
 
-    {"train": {"name": "GermEval", "def": ["GermEval"]}, "test": [{"name": "GermEval", "def": ["GermEval"]}]},
+    # {"train": {"name": "GermEval", "def": ["GermEval"]}, "test": [{"name": "GermEval", "def": ["GermEval"]}]},
+
+    {"train": {"name": "europeana-lft", "def": ["europeana-lft"]},
+     "test": [{"name": "europeana-lft", "def": ["europeana-lft"]}]},
+
+    {"train": {"name": "europeana-onb", "def": ["europeana-onb"]},
+     "test": [{"name": "europeana-onb", "def": ["europeana-onb"]}]},
+
+    {"train": {"name": "neiss-arendt", "def": ["neiss-arendt"]},
+     "test": [{"name": "neiss-arendt", "def": ["neiss-arendt"]}]},
+
+    {"train": {"name": "neiss-sturm", "def": ["neiss-sturm"]},
+     "test": [{"name": "neiss-sturm", "def": ["neiss-sturm"]}]},
 ]
 
 data_configs_merged = [
     {
         "train": {"name": "hipe2020+zefys2025", "def": ["hipe2020-nc", "zefys2025-nc"]},
         "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc"]}]
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
     },
     {
-        "train": {"name": "hisgerman+zefys2025", "def": ["hisgerman-nc", "zefys2025-nc"]},
+        "train": {"name": "hisgerman+zefys2025", "def": ["hisgerman-nc", "zefys2025-nc-wls"]},
         "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc"]}]
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    # {
+    #     "train": {"name": "hisgerman+hipe2020", "def": ["hisgerman-nc", "hipe2020-nc"]},
+    #     "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
+    #              {"name": "hipe2020", "def": ["hipe2020-nc"]}]
+    # },
+    {
+        "train": {"name": "europeana-lft+zefys2025", "def": ["europeana-lft", "zefys2025-nc-wls"]},
+        "test": [{"name": "europeana-lft", "def": ["europeana-lft"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
     },
     {
-        "train": {"name": "hisgerman+hipe2020", "def": ["hisgerman-nc", "hipe2020-nc"]},
-        "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
-                 {"name": "hipe2020", "def": ["hipe2020-nc"]}]
+        "train": {"name": "europeana-onb+zefys2025", "def": ["europeana-onb", "zefys2025-nc-wls"]},
+        "test": [{"name": "europeana-onb", "def": ["europeana-onb"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
     },
     {
-        "train": {"name": "hisgerman+hipe2020+zefys2025", "def": ["hisgerman-nc", "hipe2020-nc", "zefys2025-nc"]},
-        "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
+        "train": {"name": "neiss-arendt+zefys2025", "def": ["neiss-arendt", "zefys2025-nc-wls"]},
+        "test": [{"name": "neiss-arendt", "def": ["neiss-arendt"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    {
+        "train": {"name": "neiss-sturm+zefys2025", "def": ["neiss-sturm", "zefys2025-nc-wls"]},
+        "test": [{"name": "neiss-sturm", "def": ["neiss-sturm"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    {
+        "train": {"name": "all-historic",
+                  "def": ["neiss-sturm", "neiss-arendt", "europeana-onb", "europeana-lft", "hisgerman-nc",
+                          "hipe2020-nc", "zefys2025-nc-wls"]},
+        "test": [{"name": "europeana-lft", "def": ["europeana-lft"]},
+                 {"name": "europeana-onb", "def": ["europeana-onb"]},
+                 {"name": "neiss-arendt", "def": ["neiss-arendt"]},
+                 {"name": "neiss-sturm", "def": ["neiss-sturm"]},
+                 {"name": "hipe2020", "def": ["hipe2020-nc"]},
                  {"name": "hisgerman", "def": ["hisgerman-nc"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc"]}]
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
     }
 ]
 
@@ -179,7 +225,10 @@ def load_dataset_config(data_config, tokenizer):
 
     merged_dataset = merge_ds(datasets)
     merged_label_list = get_merged_label_list(merged_dataset["train"]["ner_tags"])
+
     merged_dataset = merged_dataset.cast_column("ner_tags", Sequence(ClassLabel(names=merged_label_list)))
+
+    merged_dataset = drop_ner_labels(merged_label_list, merged_dataset)
 
     tokenized_dataset = train.prepare_dataset(merged_dataset, tokenizer)
 
