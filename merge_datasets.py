@@ -68,6 +68,7 @@ def combine_label_functions(datasplit, mapping_dict, label_idxs_to_delete, label
     })
     label_list_updated = [x for i, x in enumerate(label_list) if i not in label_idxs_to_delete]
     split_updated = Dataset.from_pandas(split_df_updated)
+
     split_updated = split_updated.cast_column("ner_tags", Sequence(ClassLabel(names=label_list_updated)))
     
     return split_updated
@@ -97,4 +98,4 @@ def drop_ner_labels(label_list, dataset):
         "test": dataset_test
     })
                 
-    return dataset_updated
+    return dataset_updated, zefys_label_list

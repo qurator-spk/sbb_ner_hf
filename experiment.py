@@ -79,41 +79,41 @@ data_configs_single = [
 ]
 
 data_configs_merged = [
-    {
-        "train": {"name": "hipe2020+zefys2025", "def": ["hipe2020-nc", "zefys2025-nc"]},
-        "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    },
-    {
-        "train": {"name": "hisgerman+zefys2025", "def": ["hisgerman-nc", "zefys2025-nc-wls"]},
-        "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    },
     # {
-    #     "train": {"name": "hisgerman+hipe2020", "def": ["hisgerman-nc", "hipe2020-nc"]},
-    #     "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
-    #              {"name": "hipe2020", "def": ["hipe2020-nc"]}]
+    #     "train": {"name": "hipe2020+zefys2025", "def": ["hipe2020-nc", "zefys2025-nc"]},
+    #     "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
+    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
     # },
-    {
-        "train": {"name": "europeana-lft+zefys2025", "def": ["europeana-lft", "zefys2025-nc-wls"]},
-        "test": [{"name": "europeana-lft", "def": ["europeana-lft"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    },
-    {
-        "train": {"name": "europeana-onb+zefys2025", "def": ["europeana-onb", "zefys2025-nc-wls"]},
-        "test": [{"name": "europeana-onb", "def": ["europeana-onb"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    },
-    {
-        "train": {"name": "neiss-arendt+zefys2025", "def": ["neiss-arendt", "zefys2025-nc-wls"]},
-        "test": [{"name": "neiss-arendt", "def": ["neiss-arendt"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    },
-    {
-        "train": {"name": "neiss-sturm+zefys2025", "def": ["neiss-sturm", "zefys2025-nc-wls"]},
-        "test": [{"name": "neiss-sturm", "def": ["neiss-sturm"]},
-                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    },
+    # {
+    #     "train": {"name": "hisgerman+zefys2025", "def": ["hisgerman-nc", "zefys2025-nc-wls"]},
+    #     "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
+    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    # },
+    # # {
+    # #     "train": {"name": "hisgerman+hipe2020", "def": ["hisgerman-nc", "hipe2020-nc"]},
+    # #     "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
+    # #              {"name": "hipe2020", "def": ["hipe2020-nc"]}]
+    # # },
+    # {
+    #     "train": {"name": "europeana-lft+zefys2025", "def": ["europeana-lft", "zefys2025-nc-wls"]},
+    #     "test": [{"name": "europeana-lft", "def": ["europeana-lft"]},
+    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    # },
+    # {
+    #     "train": {"name": "europeana-onb+zefys2025", "def": ["europeana-onb", "zefys2025-nc-wls"]},
+    #     "test": [{"name": "europeana-onb", "def": ["europeana-onb"]},
+    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    # },
+    # {
+    #     "train": {"name": "neiss-arendt+zefys2025", "def": ["neiss-arendt", "zefys2025-nc-wls"]},
+    #     "test": [{"name": "neiss-arendt", "def": ["neiss-arendt"]},
+    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    # },
+    # {
+    #     "train": {"name": "neiss-sturm+zefys2025", "def": ["neiss-sturm", "zefys2025-nc-wls"]},
+    #     "test": [{"name": "neiss-sturm", "def": ["neiss-sturm"]},
+    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    # },
     {
         "train": {"name": "all-historic",
                   "def": ["neiss-sturm", "neiss-arendt", "europeana-onb", "europeana-lft", "hisgerman-nc",
@@ -187,7 +187,7 @@ def main(result_file, max_epochs):
 
             for test_config in test_configs:
 
-                test_tokenized_data, _ = load_dataset_config(test_config, tokenizer)
+                test_tokenized_data, _ = load_dataset_config(test_config, tokenizer, train_label_list)
 
                 class_report, errors = eval_opt.compute_metrics_per_tag(trained_ner_model, test_tokenized_data,
                                                                         train_label_list,
@@ -210,7 +210,7 @@ def main(result_file, max_epochs):
     results.to_pickle(result_file)
 
 
-def load_dataset_config(data_config, tokenizer):
+def load_dataset_config(data_config, tokenizer, label_list=None):
     datasets = []
     for dataset_def in data_config["def"]:
 
@@ -226,13 +226,17 @@ def load_dataset_config(data_config, tokenizer):
     merged_dataset = merge_ds(datasets)
     merged_label_list = get_merged_label_list(merged_dataset["train"]["ner_tags"])
 
-    merged_dataset = merged_dataset.cast_column("ner_tags", Sequence(ClassLabel(names=merged_label_list)))
+    merged_dataset = (merged_dataset.
+                      cast_column("ner_tags",
+                                  Sequence(ClassLabel(names=merged_label_list))))
 
-    merged_dataset = drop_ner_labels(merged_label_list, merged_dataset)
+    merged_dataset, merged_label_list = drop_ner_labels(merged_label_list, merged_dataset)
+
+    # import ipdb;ipdb.set_trace()
 
     tokenized_dataset = train.prepare_dataset(merged_dataset, tokenizer)
 
-    return tokenized_dataset, merged_label_list
+    return tokenized_dataset, merged_label_list if label_list is None else label_list
 
 
 def get_dataset_def(dataset_def):
