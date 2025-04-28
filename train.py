@@ -8,6 +8,7 @@ from transformers import DataCollatorForTokenClassification
 # import eval_opt
 import evaluate
 import numpy as np
+from glob import glob
 
 task = "ner"
 
@@ -93,7 +94,7 @@ def load_model(model_path, label_list):
 
 
 def train_model(model_config, data_config_name, label_list, train_params, tokenized_dataset, tokenizer,
-                save_strategy="steps", exp_model_path=None):
+                save_strategy="steps", exp_model_path=None, pretrained_model_path=None):
 
     epoch = 0
     best_f1 = -1.0
@@ -144,7 +145,13 @@ def train_model(model_config, data_config_name, label_list, train_params, tokeni
 
     model_out_path = set_model_path(model_config.name, data_config_name)
     data_collator = DataCollatorForTokenClassification(tokenizer)
-    model = load_model(model_config.path, label_list)
+
+    model_load_path = model_config.path
+
+    if pretrained_model_path is not None:
+        model_load_path = glob(pretrained_model_path + "/checkpoint*")[0]
+
+    model = load_model(model_load_path, label_list)
 
     train_args = TrainingArguments(
         model_out_path if exp_model_path is None else exp_model_path,
@@ -157,6 +164,7 @@ def train_model(model_config, data_config_name, label_list, train_params, tokeni
         weight_decay=train_params.weight_decay,
         metric_for_best_model="f1_early",
         greater_is_better=True,
+        save_total_limit=1,
         load_best_model_at_end=True
     )
 

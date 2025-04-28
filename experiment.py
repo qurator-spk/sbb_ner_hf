@@ -1,5 +1,6 @@
 # import pandas as pd
 import torch
+from pygments.lexer import default
 
 import config
 import train
@@ -13,19 +14,39 @@ import pandas as pd
 import itertools
 import hashlib
 
-models = [
-# #  {"path": "flair/ner-german", "add_prefix_space": False},
-#     {"path": "dbmdz/electra-base-german-europeana-cased-discriminator",
-#      "add_prefix_space": True, "ignore_mismatched_sizes": True},
+published_models = [
+    {"path": "dbmdz/electra-base-german-europeana-cased-discriminator",
+     "add_prefix_space": True, "ignore_mismatched_sizes": True},
     {"path": "dbmdz/bert-tiny-historic-multilingual-cased", "add_prefix_space": False},
-    # {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
-    # {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
-    # {"path": "FacebookAI/roberta-base", "add_prefix_space": True},
-    # {"path": "FacebookAI/xlm-roberta-base", "add_prefix_space": True},
-    # {"path": "deepset/gbert-base", "add_prefix_space": True},
-    # {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
-    # {"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
+    {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
+    {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
+    {"path": "FacebookAI/roberta-base", "add_prefix_space": True},
+    {"path": "FacebookAI/xlm-roberta-base", "add_prefix_space": True},
+    {"path": "deepset/gbert-base", "add_prefix_space": True},
+    {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
+    {"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
 ]
+
+named_published_models = {
+    "electra-base-german-europeana-cased-discriminator" :
+        {"path": "dbmdz/electra-base-german-europeana-cased-discriminator",
+         "add_prefix_space": True, "ignore_mismatched_sizes": True},
+    "bert-tiny-historic-multilingual-cased":
+        {"path": "dbmdz/bert-tiny-historic-multilingual-cased", "add_prefix_space": False},
+    "bert-mini-historic-multilingual-cased":
+        {"path": "dbmdz/bert-mini-historic-multilingual-cased", "add_prefix_space": False},
+    "bert-base-german-cased":
+        {"path": "dbmdz/bert-base-german-cased", "add_prefix_space": False},
+    "roberta-base":
+        {"path": "FacebookAI/roberta-base", "add_prefix_space": True},
+    "xlm-roberta-base":
+        {"path": "FacebookAI/xlm-roberta-base", "add_prefix_space": True},
+    "gbert-base": {"path": "deepset/gbert-base", "add_prefix_space": True},
+    "bert-base-historic-multilingual-cased":
+        {"path": "dbmdz/bert-base-historic-multilingual-cased", "add_prefix_space": False},
+    "distilbert-base-uncased":
+        {"path": "distilbert/distilbert-base-uncased", "add_prefix_space": False}
+}
 
 dataset_defs = [
     {"name": "hipe2020", "path": "data/hipe2020_20250415.hf", "source": "local"},
@@ -57,13 +78,13 @@ data_configs_single = [
     {"train": {"name": "zefys2025", "def": ["zefys2025-nc-wls"]},
      "test": [{"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]},
 
-    # {"train": {"name": "newseye", "def": ["newseye"]}, "test": [{"name": "newseye", "def": ["newseye"]}]},
+    {"train": {"name": "newseye", "def": ["newseye"]}, "test": [{"name": "newseye", "def": ["newseye"]}]},
 
     {"train": {"name": "hisgerman", "def": ["hisgerman-nc"]}, "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]}]},
 
-    # {"train": {"name": "conll2003", "def": ["conll2003"]}, "test": [{"name": "conll2003", "def": ["conll2003"]}]},
+    {"train": {"name": "conll2003", "def": ["conll2003"]}, "test": [{"name": "conll2003", "def": ["conll2003"]}]},
 
-    # {"train": {"name": "GermEval", "def": ["GermEval"]}, "test": [{"name": "GermEval", "def": ["GermEval"]}]},
+    {"train": {"name": "GermEval", "def": ["GermEval"]}, "test": [{"name": "GermEval", "def": ["GermEval"]}]},
 
     {"train": {"name": "europeana-lft", "def": ["europeana-lft"]},
      "test": [{"name": "europeana-lft", "def": ["europeana-lft"]}]},
@@ -79,41 +100,41 @@ data_configs_single = [
 ]
 
 data_configs_merged = [
+    {
+        "train": {"name": "hipe2020+zefys2025", "def": ["hipe2020-nc", "zefys2025-nc"]},
+        "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    {
+        "train": {"name": "hisgerman+zefys2025", "def": ["hisgerman-nc", "zefys2025-nc-wls"]},
+        "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
     # {
-    #     "train": {"name": "hipe2020+zefys2025", "def": ["hipe2020-nc", "zefys2025-nc"]},
-    #     "test": [{"name": "hipe2020", "def": ["hipe2020-nc"]},
-    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    # },
-    # {
-    #     "train": {"name": "hisgerman+zefys2025", "def": ["hisgerman-nc", "zefys2025-nc-wls"]},
+    #     "train": {"name": "hisgerman+hipe2020", "def": ["hisgerman-nc", "hipe2020-nc"]},
     #     "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
-    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    #              {"name": "hipe2020", "def": ["hipe2020-nc"]}]
     # },
-    # # {
-    # #     "train": {"name": "hisgerman+hipe2020", "def": ["hisgerman-nc", "hipe2020-nc"]},
-    # #     "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]},
-    # #              {"name": "hipe2020", "def": ["hipe2020-nc"]}]
-    # # },
-    # {
-    #     "train": {"name": "europeana-lft+zefys2025", "def": ["europeana-lft", "zefys2025-nc-wls"]},
-    #     "test": [{"name": "europeana-lft", "def": ["europeana-lft"]},
-    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    # },
-    # {
-    #     "train": {"name": "europeana-onb+zefys2025", "def": ["europeana-onb", "zefys2025-nc-wls"]},
-    #     "test": [{"name": "europeana-onb", "def": ["europeana-onb"]},
-    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    # },
-    # {
-    #     "train": {"name": "neiss-arendt+zefys2025", "def": ["neiss-arendt", "zefys2025-nc-wls"]},
-    #     "test": [{"name": "neiss-arendt", "def": ["neiss-arendt"]},
-    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    # },
-    # {
-    #     "train": {"name": "neiss-sturm+zefys2025", "def": ["neiss-sturm", "zefys2025-nc-wls"]},
-    #     "test": [{"name": "neiss-sturm", "def": ["neiss-sturm"]},
-    #              {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
-    # },
+    {
+        "train": {"name": "europeana-lft+zefys2025", "def": ["europeana-lft", "zefys2025-nc-wls"]},
+        "test": [{"name": "europeana-lft", "def": ["europeana-lft"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    {
+        "train": {"name": "europeana-onb+zefys2025", "def": ["europeana-onb", "zefys2025-nc-wls"]},
+        "test": [{"name": "europeana-onb", "def": ["europeana-onb"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    {
+        "train": {"name": "neiss-arendt+zefys2025", "def": ["neiss-arendt", "zefys2025-nc-wls"]},
+        "test": [{"name": "neiss-arendt", "def": ["neiss-arendt"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    {
+        "train": {"name": "neiss-sturm+zefys2025", "def": ["neiss-sturm", "zefys2025-nc-wls"]},
+        "test": [{"name": "neiss-sturm", "def": ["neiss-sturm"]},
+                 {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
     {
         "train": {"name": "all-historic",
                   "def": ["neiss-sturm", "neiss-arendt", "europeana-onb", "europeana-lft", "hisgerman-nc",
@@ -125,23 +146,69 @@ data_configs_merged = [
                  {"name": "hipe2020", "def": ["hipe2020-nc"]},
                  {"name": "hisgerman", "def": ["hisgerman-nc"]},
                  {"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]
+    },
+    {
+        "train": {"name": "all-historic-woz",
+                  "def": ["neiss-sturm", "neiss-arendt", "europeana-onb", "europeana-lft", "hisgerman-nc",
+                          "hipe2020-nc"]},
+        "test": [{"name": "europeana-lft", "def": ["europeana-lft"]},
+                 {"name": "europeana-onb", "def": ["europeana-onb"]},
+                 {"name": "neiss-arendt", "def": ["neiss-arendt"]},
+                 {"name": "neiss-sturm", "def": ["neiss-sturm"]},
+                 {"name": "hipe2020", "def": ["hipe2020-nc"]},
+                 {"name": "hisgerman", "def": ["hisgerman-nc"]}]
     }
 ]
 
-data_configs = data_configs_merged
-
-batch_sizes = [32]
-learning_rates = [2e-5]
+# batch_sizes = [32]
+# learning_rates = [2e-5]
 # batch_sizes = [32, 64, 96]
 # learning_rates = [2e-5, 1e-4, 1e-3]
-weight_decays = [0.01]
-warmup_steps = [100]
+# weight_decays = [0.01]
+# warmup_steps = [100]
 
 
+# noinspection SpellCheckingInspection
 @click.command()
 @click.argument('result-file', type=click.Path())
-@click.option('--max-epochs', type=int, default=1)
-def main(result_file, max_epochs):
+@click.option('--max-epochs', type=int, default=30, help="Maximum number of epochs to train. Default 30.")
+@click.option('--exp-type', type=click.Choice(['single', 'merged', 'historical'],
+                                              case_sensitive=False),
+              default="single")
+@click.option('--batch-size', type=int, multiple=True, default=[32],
+              help="Can be supplied multiple times. Batch size to try.")
+@click.option('--learning-rate', type=float, multiple=True, default=[2e-5],
+              help="Can be supplied multiple times. Learning rate to try.")
+@click.option('--weight-decay', type=float, multiple=True, default=[0.01],
+              help="Can be supplied multiple times. Weight decay to try.")
+@click.option('--warmup-step', type=int, multiple=True, default=[100],
+              help="Can be supplied multiple times. Warmup steps to try.")
+@click.option('--use-data-config', type=str, multiple=True, default=[],
+              help="Can be supplied multiple times. Run only on these training config.")
+@click.option('--pretrain-config-file', type=click.Path(exists=True), default=None)
+@click.option('--pretrain-path', type=click.Path(exists=True), default="./")
+@click.option('--dry-run', type=bool, is_flag=True, help='Dry run only.')
+def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_decay, warmup_step, use_data_config,
+         pretrain_config_file, pretrain_path, dry_run):
+
+    if not pretrain_path.endswith("/"):
+        pretrain_path += "/"
+
+    if exp_type == "single":
+        data_configs = data_configs_single
+    elif exp_type == "merged":
+        data_configs = data_configs_single
+    elif exp_type == "historical":
+        use_data_config = ["europeana-lft", "europeana-onb", "hipe2020", "hisgerman",
+                           "neiss-arendt", "neiss-sturm", "zefys2025"]
+    elif exp_type == "contemporary":
+        use_data_config = ["conll2003", "GermEval"]
+    else:
+        raise RuntimeError("Unknown type of experiment.")
+
+    if len(use_data_config) > 0:
+        data_configs = ([dc for dc in data_configs_single if dc["train"]["name"] in use_data_config] +
+                        [dc for dc in data_configs_merged if dc["train"]["name"] in use_data_config])
 
     results = None
     if os.path.exists(result_file):
@@ -149,20 +216,33 @@ def main(result_file, max_epochs):
 
     train.set_torch_device()
 
-    for model_def, data_config, batch_size, learning_rate, weight_decay, warmup_step in (
-            itertools.product(models, data_configs, batch_sizes, learning_rates, weight_decays, warmup_steps)):
+    if pretrain_config_file is None:
+        model_defs = published_models
+    else:
+        pretrain_configs = pd.read_pickle(pretrain_config_file)
+
+        model_defs = []
+        for _, (model, exp_ID, pretrain_data) in pretrain_configs[["model", "exp_ID", "train"]].iterrows():
+            model_tmp = named_published_models[model].copy()
+            model_tmp["pretrained_model"] = exp_ID
+            model_tmp["pretrain"] = pretrain_data
+
+            model_defs.append(model_tmp)
+
+    for model_def, data_config, bs, lr, wd, ws in (
+            itertools.product(model_defs, data_configs, batch_size, learning_rate, weight_decay, warmup_step)):
 
         try:
             train_params = config.TrainingParams()
 
-            train_params.batch_size = batch_size
-            train_params.learning_rate = learning_rate
-            train_params.weight_decay = weight_decay
-            train_params.warmup_steps = warmup_step
+            train_params.batch_size = bs
+            train_params.learning_rate = lr
+            train_params.weight_decay = wd
+            train_params.warmup_steps = ws
             train_params.num_train_epochs = max_epochs
 
-            exp_ID = "EXP_" + hashlib.sha256((str(model_def) + str(data_config) + str(train_params)).encode()).hexdigest()
-
+            exp_ID = "EXP_" + hashlib.sha256((str(model_def) + str(data_config) +
+                                              str(train_params)).encode()).hexdigest()
             # noinspection PyTypeChecker
             if results is not None and sum(results.exp_ID == exp_ID) > 0:
                 print("Skipping {} - experiment already exists.".format(exp_ID))
@@ -172,30 +252,51 @@ def main(result_file, max_epochs):
             model_config.set_name()
             print(model_config.info())
 
-            tokenizer = train.get_tokenizer(model_def["path"], model_def["add_prefix_space"],
-                                            ignore_mismatched_sizes=model_def["ignore_mismatched_sizes"]
-                                            if "ignore_mismatched_sizes" in model_def else False)
-
             train_config = data_config["train"]
             test_configs = data_config["test"]
 
-            train_tokenized_data, train_label_list = load_dataset_config(train_config, tokenizer)
+            pretrained_model_path = None if "pretrained_model" not in model_def \
+                else pretrain_path + model_def["pretrained_model"]
 
-            trained_ner_model, model_out_path, best_result = (
-                train.train_model(model_config, train_config["name"], train_label_list, train_params,
-                                  train_tokenized_data, tokenizer, save_strategy="epoch", exp_model_path=exp_ID))
+            if pretrained_model_path is not None:
+                print("Loading pretrained model from: {}".format(pretrained_model_path))
+
+            if dry_run:
+                best_result = {"model": model_config.name, "train": train_config["name"],
+                               "train_params": str(train_params), "epoch": -1, "f1_test": 0.0, "f1_early": 0.0}
+            else:
+
+                tokenizer = train.get_tokenizer(model_def["path"], model_def["add_prefix_space"],
+                                                ignore_mismatched_sizes=model_def["ignore_mismatched_sizes"]
+                                                if "ignore_mismatched_sizes" in model_def else False)
+
+                train_tokenized_data, train_label_list = load_dataset_config(train_config, tokenizer)
+
+                trained_ner_model, model_out_path, best_result = (
+                    train.train_model(model_config, train_config["name"], train_label_list, train_params,
+                                      train_tokenized_data, tokenizer, save_strategy="epoch", exp_model_path=exp_ID,
+                                      pretrained_model_path=pretrained_model_path))
 
             for test_config in test_configs:
 
-                test_tokenized_data, _ = load_dataset_config(test_config, tokenizer, train_label_list)
+                if dry_run:
+                    result = best_result.copy()
+                else:
+                    # noinspection PyUnboundLocalVariable
+                    test_tokenized_data, _ = load_dataset_config(test_config, tokenizer, train_label_list)
 
-                class_report, errors = eval_opt.compute_metrics_per_tag(trained_ner_model, test_tokenized_data,
-                                                                        train_label_list,
-                                                                        output_dict=True)
-
-                result = process_report(best_result.copy(), class_report)
+                    # noinspection PyUnboundLocalVariable
+                    class_report, errors = eval_opt.compute_metrics_per_tag(trained_ner_model, test_tokenized_data,
+                                                                            train_label_list,
+                                                                            output_dict=True)
+                    result = process_report(best_result.copy(), class_report)
 
                 result['test'] = test_config["name"]
+
+                if "pretrain" in model_def:
+                    result["pretrain"] = model_def["pretrain"]
+                    result["pretrained_model"] = model_def["pretrained_model"]
+
                 result["exp_ID"] = exp_ID
 
                 if results is None:
