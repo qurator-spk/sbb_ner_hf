@@ -58,7 +58,7 @@ def replace_all_labels(datasplit, mapping_dict, labels_idxs_to_delete):
     return ner_tags
 
 
-def combine_label_functions(datasplit, mapping_dict, label_idxs_to_delete, label_list): 
+def combine_label_functions(datasplit, mapping_dict, label_idxs_to_delete, label_list, zefys_label_list): 
     split_labels_updated = replace_all_labels(datasplit, mapping_dict, label_idxs_to_delete)
     split_df_updated = pd.DataFrame(
     {'id': datasplit['id'],
@@ -68,7 +68,7 @@ def combine_label_functions(datasplit, mapping_dict, label_idxs_to_delete, label
     })
     label_list_updated = [x for i, x in enumerate(label_list) if i not in label_idxs_to_delete]
     split_updated = Dataset.from_pandas(split_df_updated)
-    split_updated = split_updated.cast_column("ner_tags", Sequence(ClassLabel(names=label_list_updated)))
+    split_updated = split_updated.cast_column("ner_tags", Sequence(ClassLabel(names=zefys_label_list)))
     
     return split_updated
 
@@ -87,9 +87,9 @@ def drop_ner_labels(label_list, dataset):
 
     mapping_dict = create_mapping_dict(label_list)
 
-    dataset_train = combine_label_functions(train_split, mapping_dict, label_idxs_to_delete, label_list)
-    dataset_test = combine_label_functions(test_split, mapping_dict, label_idxs_to_delete, label_list)
-    dataset_val = combine_label_functions(val_split, mapping_dict, label_idxs_to_delete, label_list)
+    dataset_train = combine_label_functions(train_split, mapping_dict, label_idxs_to_delete, label_list, zefys_label_list)
+    dataset_test = combine_label_functions(test_split, mapping_dict, label_idxs_to_delete, label_list, zefys_label_list)
+    dataset_val = combine_label_functions(val_split, mapping_dict, label_idxs_to_delete, label_list, zefys_label_list)
 
     dataset_updated = DatasetDict({
         "train": dataset_train,
