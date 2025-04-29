@@ -10,18 +10,20 @@ zefys-pretrain:
 	mkdir -p zefys-pretrained
 	python experiment.py zefys-pretrained/pretrained-on-zefys-configs.pkl --model-storage-path zefys-pretrained --use-data-config zefys2025 --max-epochs=30
 
-on-zefys-pretrained:
-	python experiment.py --pretrain-path=zefys-pretrained --pretrain-config-file=zefys-pretrained/pretrained-on-zefys-configs.pkl results-pretrained-zefys.pkl --use-data-config "europeana-lft" --use-data-config "europeana-onb" --use-data-config "hipe2020" --use-data-config "hisgerman" --use-data-config "neiss-arendt" --use-data-config "neiss-sturm" $(OPT_PARAMETERS) 
+historic-on-zefys-pretrained:
+	mkdir -p on-zefys-pretrained
+	python experiment.py --model-storage-path on-zefys-pretrained --pretrain-path=zefys-pretrained --pretrain-config-file=zefys-pretrained/pretrained-on-zefys-configs.pkl results-pretrained-zefys.pkl --use-data-config "europeana-lft" --use-data-config "europeana-onb" --use-data-config "hipe2020" --use-data-config "hisgerman" --use-data-config "neiss-arendt" --use-data-config "neiss-sturm" $(OPT_PARAMETERS) 
 
 
-all-pretrain:
+historic-all-pretrain:
 	mkdir -p all-historic-pretrained
-	python experiment.py zefys-pretrained/pretrained-on-all-historic-configs.pkl --model-storage-path all-historic-pretrained --use-data-config all-historic --max-epochs=30
+	python experiment.py all-historic-pretrained/pretrained-on-all-historic-configs.pkl --model-storage-path all-historic-pretrained --use-data-config all-historic --max-epochs=30
 
-on-all-pretrained:
-	python experiment.py --pretrain-path=all-historic-pretrained --pretrain-config-file=pretrained/pretrained-on-all-historic-configs.pkl results-pretrained-all-historic.pkl --exp-type historical $(OPT_PARAMETERS) 
+historic-on-all-historic-pretrained:
+	mkdir -p on-all-historic-pretrained
+	python experiment.py --model-storage-path on-all-historic-pretrained --pretrain-path=all-historic-pretrained --pretrain-config-file=pretrained/pretrained-on-all-historic-configs.pkl results-pretrained-all-historic.pkl --exp-type historical $(OPT_PARAMETERS) 
 
-all:	historical contemporary zefys-pretrain on-zefys-pretrained all-pretrain on-all-pretrained
+all:	historical contemporary zefys-pretrain historic-on-zefys-pretrained all-historic-pretrain historic-on-all-historic--pretrained
 
 neiss-sturm:
 	python experiment.py results_neiss-sturm.pkl --use-data-config neiss-sturm --max-epochs=30 
