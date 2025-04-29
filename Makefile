@@ -4,7 +4,7 @@ historical:
 	python experiment.py results-historical.pkl --max-epochs=30 --exp-type historical $(OPT_PARAMETERS) 
 
 contemporary:
-	python experiment.py results-historical.pkl --max-epochs=30 --exp-type contemporary $(OPT_PARAMETERS) 
+	python experiment.py results-contemporary.pkl --max-epochs=30 --exp-type contemporary $(OPT_PARAMETERS) 
 
 zefys-pretrain:
 	mkdir -p zefys-pretrained
@@ -20,6 +20,8 @@ all-pretrain:
 
 on-all-pretrained:
 	python experiment.py --pretrain-path=all-historic-pretrained --pretrain-config-file=pretrained/pretrained-on-all-historic-configs.pkl results-pretrained-all-historic.pkl --exp-type historical $(OPT_PARAMETERS) 
+
+all:	historical contemporary zefys-pretrain on-zefys-pretrained all-pretrain on-all-pretrained
 
 neiss-sturm:
 	python experiment.py results_neiss-sturm.pkl --use-data-config neiss-sturm --max-epochs=30 
