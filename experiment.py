@@ -229,6 +229,7 @@ def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_de
 
             model_defs.append(model_tmp)
 
+    # noinspection PyUnboundLocalVariable
     for model_def, data_config, bs, lr, wd, ws in (
             itertools.product(model_defs, data_configs, batch_size, learning_rate, weight_decay, warmup_step)):
 
