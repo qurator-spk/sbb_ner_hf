@@ -187,12 +187,16 @@ data_configs_merged = [
               help="Can be supplied multiple times. Run only on these training config.")
 @click.option('--pretrain-config-file', type=click.Path(exists=True), default=None)
 @click.option('--pretrain-path', type=click.Path(exists=True), default="./")
+@click.option('--model-storage-path', type=click.Path(exists=True), default="./")
 @click.option('--dry-run', type=bool, is_flag=True, help='Dry run only.')
 def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_decay, warmup_step, use_data_config,
-         pretrain_config_file, pretrain_path, dry_run):
+         pretrain_config_file, pretrain_path, model_storage_path, dry_run):
 
     if not pretrain_path.endswith("/"):
         pretrain_path += "/"
+
+    if not model_storage_path.endswith("/"):
+        model_storage_path += "/"
 
     if exp_type == "single":
         data_configs = data_configs_single
@@ -275,7 +279,8 @@ def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_de
 
                 trained_ner_model, model_out_path, best_result = (
                     train.train_model(model_config, train_config["name"], zefys_label_list, train_params,
-                                      train_tokenized_data, tokenizer, save_strategy="epoch", exp_model_path=exp_ID,
+                                      train_tokenized_data, tokenizer, save_strategy="epoch",
+                                      exp_model_path=model_storage_path + exp_ID,
                                       pretrained_model_path=pretrained_model_path))
 
             for test_config in test_configs:

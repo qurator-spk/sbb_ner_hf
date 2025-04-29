@@ -56,8 +56,8 @@ def map_ner_tags_to_zefys(dataset):
 
     dataset_updated = DatasetDict({
         "train": map_split_ner_tags_to_zefys(dataset["train"]),
-        "validation": map_split_ner_tags_to_zefys(dataset["test"]),
-        "test": map_split_ner_tags_to_zefys(dataset["validation"])
+        "validation": map_split_ner_tags_to_zefys(dataset["validation"]),
+        "test": map_split_ner_tags_to_zefys(dataset["test"])
     })
                 
     return dataset_updated

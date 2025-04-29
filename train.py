@@ -50,8 +50,8 @@ def load_ner_dataset(dataset_path, dataset_source):
 
         dataset = DatasetDict({
             "train": map_ner_tags_to_str(dataset["train"]),
-            "validation": map_ner_tags_to_str(dataset["test"]),
-            "test": map_ner_tags_to_str(dataset["validation"])
+            "validation": map_ner_tags_to_str(dataset["validation"]),
+            "test": map_ner_tags_to_str(dataset["test"])
         })
 
     elif dataset_source == "local":
