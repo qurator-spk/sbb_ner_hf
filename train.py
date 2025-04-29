@@ -1,6 +1,7 @@
 import torch
+import pandas as pd
 from datetime import datetime
-from datasets import load_dataset, load_from_disk
+from datasets import load_dataset, load_from_disk, Dataset, DatasetDict
 from transformers import AutoTokenizer, AutoModelForTokenClassification, \
     EarlyStoppingCallback  # , AutoModelForSequenceClassification
 from transformers import TrainingArguments, Trainer
@@ -27,13 +28,40 @@ def set_model_path(model_path, dataset_path):
 
 
 def load_ner_dataset(dataset_path, dataset_source):
+
+    def map_ner_tags_to_str(datasplit):
+
+        labels = datasplit.features['ner_tags'].feature.names
+
+        idxs_to_labels = {i: label for i, label in enumerate(labels)}
+
+        ner_tags = datasplit["ner_tags"]
+
+        for i_sent, split_sent in enumerate(ner_tags):
+            ner_tags[i_sent] = [idxs_to_labels[idx] for idx in split_sent]
+
+        return Dataset.from_pandas(
+            pd.DataFrame({'id': datasplit['id'], 'tokens': datasplit['tokens'], 'ner_tags': ner_tags})
+        )
+
     if dataset_source == "hf":
         # load a dataset (HF)
         dataset = load_dataset(dataset_path, cache_dir="./hf-dataset-cache/" + dataset_path, trust_remote_code=True)
+
+        dataset = DatasetDict({
+            "train": map_ner_tags_to_str(dataset["train"]),
+            "validation": map_ner_tags_to_str(dataset["test"]),
+            "test": map_ner_tags_to_str(dataset["validation"])
+        })
+
     elif dataset_source == "local":
+
         dataset = load_from_disk(dataset_path)
     else:
         raise RuntimeError("Unknown type of source.")
+
+    import ipdb;ipdb.set_trace()
+
     return dataset
 
 

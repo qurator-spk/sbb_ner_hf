@@ -1,12 +1,12 @@
 # import pandas as pd
 import torch
-from pygments.lexer import default
+# from pygments.lexer import default
 
 import config
 import train
 import eval_opt
-from merge_datasets import drop_ner_labels,merge_ds, get_label_list as get_merged_label_list
-from datasets import Sequence, ClassLabel
+from merge_datasets import map_ner_tags_to_zefys, merge_ds, zefys_label_list  # get_label_list as get_merged_label_list
+# from datasets import Sequence, ClassLabel
 
 import click
 import os
@@ -271,10 +271,10 @@ def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_de
                                                 ignore_mismatched_sizes=model_def["ignore_mismatched_sizes"]
                                                 if "ignore_mismatched_sizes" in model_def else False)
 
-                train_tokenized_data, train_label_list = load_dataset_config(train_config, tokenizer)
+                train_tokenized_data = load_dataset_config(train_config, tokenizer)
 
                 trained_ner_model, model_out_path, best_result = (
-                    train.train_model(model_config, train_config["name"], train_label_list, train_params,
+                    train.train_model(model_config, train_config["name"], zefys_label_list, train_params,
                                       train_tokenized_data, tokenizer, save_strategy="epoch", exp_model_path=exp_ID,
                                       pretrained_model_path=pretrained_model_path))
 
@@ -284,12 +284,11 @@ def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_de
                     result = best_result.copy()
                 else:
                     # noinspection PyUnboundLocalVariable
-                    test_tokenized_data, _ = load_dataset_config(test_config, tokenizer, train_label_list)
+                    test_tokenized_data = load_dataset_config(test_config, tokenizer)
 
                     # noinspection PyUnboundLocalVariable
                     class_report, errors = eval_opt.compute_metrics_per_tag(trained_ner_model, test_tokenized_data,
-                                                                            train_label_list,
-                                                                            output_dict=True)
+                                                                            zefys_label_list, output_dict=True)
                     result = process_report(best_result.copy(), class_report)
 
                 result['test'] = test_config["name"]
@@ -312,7 +311,7 @@ def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_de
     results.to_pickle(result_file)
 
 
-def load_dataset_config(data_config, tokenizer, label_list=None):
+def load_dataset_config(data_config, tokenizer):
     datasets = []
     for dataset_def in data_config["def"]:
 
@@ -326,19 +325,12 @@ def load_dataset_config(data_config, tokenizer, label_list=None):
         datasets.append(train.load_ner_dataset(dataset_config.path, dataset_config.source))
 
     merged_dataset = merge_ds(datasets)
-    merged_label_list = get_merged_label_list(merged_dataset["train"]["ner_tags"])
 
-    merged_dataset = (merged_dataset.
-                      cast_column("ner_tags",
-                                  Sequence(ClassLabel(names=merged_label_list))))
-
-    merged_dataset, merged_label_list = drop_ner_labels(merged_label_list, merged_dataset)
-
-    # import ipdb;ipdb.set_trace()
+    merged_dataset = map_ner_tags_to_zefys(merged_dataset)
 
     tokenized_dataset = train.prepare_dataset(merged_dataset, tokenizer)
 
-    return tokenized_dataset, merged_label_list if label_list is None else label_list
+    return tokenized_dataset
 
 
 def get_dataset_def(dataset_def):

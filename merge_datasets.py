@@ -1,6 +1,8 @@
 from datasets import Dataset, DatasetDict, ClassLabel, Sequence, concatenate_datasets
 import pandas as pd
 
+zefys_label_list = ["B-LOC", "I-LOC", "B-PER", "I-PER", "B-ORG", "I-ORG", "O"]
+
 
 def get_label_list(labels):
     # copied from https://github.com/huggingface/transformers/blob/66fd3a8d626a32989f4569260db32785c6cbf42a/
@@ -35,67 +37,27 @@ def merge_ds(list_of_datasets):
     return merged_dataset
 
 
-# create mapping dict: num > label
-def create_mapping_dict(label_list):
-    mapping_dict = dict()
-    for i, label in enumerate(label_list):
-        mapping_dict[i] = label
-    return mapping_dict
+def map_split_ner_tags_to_zefys(datasplit):
 
-
-# replace all labels, with either "O" or other label from label_list
-def replace_all_labels(datasplit, mapping_dict, labels_idxs_to_delete):
     ner_tags = datasplit["ner_tags"]
-    for key, value in mapping_dict.items():
-        if key not in labels_idxs_to_delete:
-            for i_sent, split_sent in enumerate(ner_tags): 
-                if key in split_sent:
-                    ner_tags[i_sent] = [value if x==key else x for x in split_sent]
-        else:
-            for i_sent, split_sent in enumerate(ner_tags): 
-                if key in split_sent:
-                    ner_tags[i_sent] = ["O" if x==key else x for x in split_sent]
-    return ner_tags
 
+    for i_sent, split_sent in enumerate(ner_tags):
+        ner_tags[i_sent] = ["O" if x not in zefys_label_list else x for x in split_sent]
 
-def combine_label_functions(datasplit, mapping_dict, label_idxs_to_delete, label_list): 
-    split_labels_updated = replace_all_labels(datasplit, mapping_dict, label_idxs_to_delete)
-    split_df_updated = pd.DataFrame(
-    {'id': datasplit['id'],
-     'tokens': datasplit['tokens'],
-     'ner_tags': split_labels_updated,
+    split_updated = Dataset.from_pandas(
+        pd.DataFrame({'id': datasplit['id'], 'tokens': datasplit['tokens'], 'ner_tags': ner_tags}))
 
-    })
-    label_list_updated = [x for i, x in enumerate(label_list) if i not in label_idxs_to_delete]
-    split_updated = Dataset.from_pandas(split_df_updated)
-
-    split_updated = split_updated.cast_column("ner_tags", Sequence(ClassLabel(names=label_list_updated)))
+    split_updated = split_updated.cast_column("ner_tags", Sequence(ClassLabel(names=zefys_label_list)))
     
     return split_updated
 
-    
-def drop_ner_labels(label_list, dataset):
-    zefys_label_list = ["B-LOC", "I-LOC", "B-PER", "I-PER", "B-ORG", "I-ORG", "O"]
 
-    label_idxs_to_delete = []
-    for i, label in enumerate(label_list):
-        if label not in zefys_label_list:
-            label_idxs_to_delete.append(i)
-    
-    train_split = dataset["train"]
-    test_split = dataset["test"]
-    val_split = dataset["validation"]
-
-    mapping_dict = create_mapping_dict(label_list)
-
-    dataset_train = combine_label_functions(train_split, mapping_dict, label_idxs_to_delete, label_list)
-    dataset_test = combine_label_functions(test_split, mapping_dict, label_idxs_to_delete, label_list)
-    dataset_val = combine_label_functions(val_split, mapping_dict, label_idxs_to_delete, label_list)
+def map_ner_tags_to_zefys(dataset):
 
     dataset_updated = DatasetDict({
-        "train": dataset_train,
-        "validation": dataset_val,
-        "test": dataset_test
+        "train": map_split_ner_tags_to_zefys(dataset["train"]),
+        "validation": map_split_ner_tags_to_zefys(dataset["test"]),
+        "test": map_split_ner_tags_to_zefys(dataset["validation"])
     })
                 
-    return dataset_updated, zefys_label_list
+    return dataset_updated
