@@ -26,6 +26,8 @@ for file in files:
     #find sentence beginnings
     sent_starts = input.loc[input["No."] == 0]
     sent_starts_idx = sent_starts.index.tolist()
+    end_of_file_pos = len(input.index) #add pos of last line to be able to include last sent in for loop
+    sent_starts_idx.append(end_of_file_pos)
 
     #read into nested lists based on sentence structure
     for i, index in enumerate(sent_starts_idx):
@@ -88,7 +90,7 @@ zefys_dataset_splits = DatasetDict({
 print(zefys_dataset_splits)
 
 #https://stackoverflow.com/a/72021864
-zefys_dataset_splits.save_to_disk("data/zefys2025_not-casted.hf")
+zefys_dataset_splits.save_to_disk("data/zefys2025.hf")
 
 """
 #how to (re-)load?
