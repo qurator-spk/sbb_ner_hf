@@ -185,6 +185,8 @@ data_configs_merged = [
               help="Can be supplied multiple times. Warmup steps to try.")
 @click.option('--use-data-config', type=str, multiple=True, default=[],
               help="Can be supplied multiple times. Run only on these training configs.")
+@click.option('--use-test-config', type=str, multiple=True, default=[],
+              help="Can be supplied multiple times. Test each trained model on these configs.")
 @click.option('--pretrain-config-file', type=click.Path(exists=True), default=None,
               help="Train on pretrained models defined in this result file (from a previous experiment.py run).")
 @click.option('--pretrain-path', type=click.Path(exists=True), default="./",
@@ -194,7 +196,7 @@ data_configs_merged = [
 @click.option('--dry-run', type=bool, is_flag=True, help='Dry run only. Do not train or test but just '
                                                          'check if everything runs through.')
 def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_decay, warmup_step, use_data_config,
-         pretrain_config_file, pretrain_path, model_storage_path, dry_run):
+         use_test_config, pretrain_config_file, pretrain_path, model_storage_path, dry_run):
 
     if not pretrain_path.endswith("/"):
         pretrain_path += "/"
@@ -217,6 +219,18 @@ def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_de
     if len(use_data_config) > 0:
         data_configs = ([dc for dc in data_configs_single if dc["train"]["name"] in use_data_config] +
                         [dc for dc in data_configs_merged if dc["train"]["name"] in use_data_config])
+
+    if len(use_test_config) == 1 and use_test_config[0] == 'historical':
+        use_test_config = ["europeana-lft", "europeana-onb", "hipe2020", "hisgerman",
+                           "neiss-arendt", "neiss-sturm", "zefys2025"]
+
+    elif len(use_test_config) == 1 and use_test_config[0] == 'contemporary':
+        use_test_config = ["europeana-lft", "europeana-onb", "hipe2020", "hisgerman",
+                           "neiss-arendt", "neiss-sturm", "zefys2025"]
+
+    elif len(use_test_config) == 1 and use_test_config[0] == 'all':
+        use_test_config = ["europeana-lft", "europeana-onb", "hipe2020", "hisgerman",
+                           "neiss-arendt", "neiss-sturm", "zefys2025"] + ["conll2003", "GermEval"]
 
     results = None
     if os.path.exists(result_file):
@@ -262,7 +276,11 @@ def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_de
             print(model_config.info())
 
             train_config = data_config["train"]
-            test_configs = data_config["test"]
+
+            if len(use_test_config) == 0:
+                test_configs = data_config["test"]
+            else:
+                test_configs = [get_test_config(nm) for nm in use_test_config]
 
             pretrained_model_path = None if "pretrained_model" not in model_def \
                 else pretrain_path + model_def["pretrained_model"]
@@ -349,6 +367,14 @@ def get_dataset_def(dataset_def):
             return d
 
     raise RuntimeError("Unknown dataset definition: {}.".format(dataset_def))
+
+def get_test_config(name):
+
+    for cf in data_configs_single:
+        if cf['test'][0]['name'] == name:
+            return cf['test'][0]
+
+    raise RuntimeError("Unknown dataset test config: {}.".format(name))
 
 
 def process_report(best_result, class_report):

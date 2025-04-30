@@ -1,5 +1,9 @@
 OPT_PARAMETERS=--batch-size 32 --batch-size 64 --batch-size 96 --learning-rate 2e-5 --learning-rate 4e-5 --learning-rate 1e-4
 
+single:
+	mkdir -p models-single
+	python experiment.py results-single.pkl --model-storage-path models-single --max-epochs=30 --exp-type single --use-test-config all $(OPT_PARAMETERS)
+
 historical:
 	python experiment.py results-historical.pkl --max-epochs=30 --exp-type historical $(OPT_PARAMETERS) 
 
