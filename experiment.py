@@ -172,7 +172,7 @@ data_configs_merged = [
 @click.command()
 @click.argument('result-file', type=click.Path())
 @click.option('--max-epochs', type=int, default=30, help="Maximum number of epochs to train. Default 30.")
-@click.option('--exp-type', type=click.Choice(['single', 'merged', 'historical'],
+@click.option('--exp-type', type=click.Choice(['single', 'merged', 'historical', 'contemporary'],
                                               case_sensitive=False),
               default="single")
 @click.option('--batch-size', type=int, multiple=True, default=[32],
@@ -184,11 +184,15 @@ data_configs_merged = [
 @click.option('--warmup-step', type=int, multiple=True, default=[100],
               help="Can be supplied multiple times. Warmup steps to try.")
 @click.option('--use-data-config', type=str, multiple=True, default=[],
-              help="Can be supplied multiple times. Run only on these training config.")
-@click.option('--pretrain-config-file', type=click.Path(exists=True), default=None)
-@click.option('--pretrain-path', type=click.Path(exists=True), default="./")
-@click.option('--model-storage-path', type=click.Path(exists=True), default="./")
-@click.option('--dry-run', type=bool, is_flag=True, help='Dry run only.')
+              help="Can be supplied multiple times. Run only on these training configs.")
+@click.option('--pretrain-config-file', type=click.Path(exists=True), default=None,
+              help="Train on pretrained models defined in this result file (from a previous experiment.py run).")
+@click.option('--pretrain-path', type=click.Path(exists=True), default="./",
+              help="Load the pretrained models checkpoints (EXP_... directories) from this directory. Default './'")
+@click.option('--model-storage-path', type=click.Path(exists=True), default="./",
+              help="Store the models checkpoints (EXP_... directories) in this directory.")
+@click.option('--dry-run', type=bool, is_flag=True, help='Dry run only. Do not train or test but just '
+                                                         'check if everything runs through.')
 def main(result_file, max_epochs, exp_type, batch_size, learning_rate, weight_decay, warmup_step, use_data_config,
          pretrain_config_file, pretrain_path, model_storage_path, dry_run):
 
