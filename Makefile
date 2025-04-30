@@ -21,7 +21,7 @@ historic-all-pretrain:
 
 historic-on-all-historic-pretrained:
 	mkdir -p on-all-historic-pretrained
-	python experiment.py --model-storage-path on-all-historic-pretrained --pretrain-path=all-historic-pretrained --pretrain-config-file=pretrained/pretrained-on-all-historic-configs.pkl results-pretrained-all-historic.pkl --exp-type historical $(OPT_PARAMETERS) 
+	python experiment.py --model-storage-path on-all-historic-pretrained --pretrain-path=all-historic-pretrained --pretrain-config-file=all-historic-pretrained/pretrained-on-all-historic-configs.pkl results-pretrained-all-historic.pkl --exp-type historical $(OPT_PARAMETERS) 
 
 all:	historical contemporary zefys-pretrain historic-on-zefys-pretrained all-historic-pretrain historic-on-all-historic--pretrained
 
