@@ -78,7 +78,7 @@ data_configs_single = [
     {"train": {"name": "zefys2025", "def": ["zefys2025-nc-wls"]},
      "test": [{"name": "zefys2025", "def": ["zefys2025-nc-wls"]}]},
 
-    {"train": {"name": "newseye", "def": ["newseye"]}, "test": [{"name": "newseye", "def": ["newseye"]}]},
+    # {"train": {"name": "newseye", "def": ["newseye"]}, "test": [{"name": "newseye", "def": ["newseye"]}]},
 
     {"train": {"name": "hisgerman", "def": ["hisgerman-nc"]}, "test": [{"name": "hisgerman", "def": ["hisgerman-nc"]}]},
 
