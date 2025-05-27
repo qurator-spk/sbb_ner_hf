@@ -27,17 +27,20 @@ Most of the datasets that were used in this process needed additional preprocess
 | [hisGermaNER](https://huggingface.co/datasets/stefan-it/HisGermaNER) | run `preprocess_hisgermaner.py` |
 | [hipe2020](https://github.com/hipe-eval/HIPE-2022-data/tree/main/data/v2.1/hipe2020/de) | run `preprocess_hipe_hipe2020.py` |
 | [neiss](https://github.com/NEISSproject/NERDatasets) (arendt, sturm) | run `preprocess_neiss.py` for each subset |
-| [europeana](https://github.com/cneud/ner-corpora) (lft, onb) | transform into zefys2025 data format, run `preprocess_zefys2025.py` |
+| [europeana](https://github.com/cneud/ner-corpora) (lft, onb) | transform into zefys2025 data format, run `preprocess_zefys2025.py` for each subset |
 | [conll2003](eriktks/conll2003) | / (loaded directly via HF) |
 | [germeval2014](GermanEval/germeval_14) | / (loaded directly via HF) | 
 
-* example for data format to use in consecutive training steps
+Each preprocessing script uses the [`datasets.Dataset.save_to_disk()`](https://huggingface.co/docs/datasets/package_reference/main_classes#datasets.Dataset.save_to_disk) function to save the `.hf` dataset including train/test/validation splits in Apache [Arrow](https://huggingface.co/docs/datasets/about_arrow) format for simple reloading ([`datasets.Dataset.load_from_disk()`](https://huggingface.co/docs/datasets/package_reference/main_classes#datasets.Dataset.load_from_disk)). There are three columns in a dataset: 
+* `id`: identifier for each sentence in the dataset
+* `tokens`: nested list of all the tokens per sentence
+* `ner_tags`: nested list of all the NER tags per sentence
 
 ### Introduction
-* to get a broad understanding of the different functionalities developed and accessible via ... (.py files), see main.ipynb. You need to have Jupyter Notebook installed and running to execute code cells from this notebook
+* For a first/broad understanding of different functionalities included in `config.py`, `train.py`, `merge_datasets.py` and `eval_opt.py`, see `main.ipynb`. The [`token_classification.ipynb`](https://github.com/huggingface/notebooks/blob/main/examples/token_classification.ipynb) notebook from HuggingFace served as a starting point to the developments which can be found in these files. To run the code cells from `main.ipynb`, [Jupyter Notebook](https://jupyter-notebook.readthedocs.io/en/stable/) needs to be installed.
 
 ### Experiments
-* to be able to run multiple experiment configurations at once, experiment.py and makefile were developed. Results are saved as pkl files and can then be accessed similar to experiment.ipynb
+* To be able to experiment with multiple training configurations at once, `experiment.py` and `Makefile` were developed. Experiment results are saved as `.pkl` files and can then be accessed similar to `experiment.ipynb`.
 
 ## How to cite
-* publication
+* Publication
