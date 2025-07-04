@@ -37,10 +37,10 @@ Each preprocessing script uses the [`datasets.Dataset.save_to_disk()`](https://h
 * `ner_tags`: nested list of all the NER tags per sentence
 
 ### Introduction
-* For a first/broad understanding of different functionalities included in `config.py`, `train.py`, `merge_datasets.py` and `eval_opt.py`, see `main.ipynb`. The [`token_classification.ipynb`](https://github.com/huggingface/notebooks/blob/main/examples/token_classification.ipynb) notebook from HuggingFace served as a starting point to the developments which can be found in these files. To run the code cells from `main.ipynb`, [Jupyter Notebook](https://jupyter-notebook.readthedocs.io/en/stable/) needs to be installed.
+For a first/broad understanding of different functionalities included in `config.py`, `train.py`, `merge_datasets.py` and `eval_opt.py`, see `main.ipynb`. The [`token_classification.ipynb`](https://github.com/huggingface/notebooks/blob/main/examples/token_classification.ipynb) notebook from HuggingFace served as a starting point to the developments which can be found in these files. To run the code cells from `main.ipynb`, [Jupyter Notebook](https://jupyter-notebook.readthedocs.io/en/stable/) needs to be installed.
 
 ### Experiments
-* To be able to experiment with multiple training configurations at once, `experiment.py` and `Makefile` were developed. Experiment results are saved as `.pkl` files and can then be accessed similar to `experiment.ipynb`.
+To be able to experiment with multiple training configurations at once, `experiment.py` and `Makefile` were developed. Experiment results are saved as `.pkl` files and can then be accessed similar to `experiment.ipynb`.
 
 ## How to cite
 * Publication
