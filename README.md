@@ -1,12 +1,19 @@
 # sbb_ner_hf
 
+![](https://img.shields.io/badge/-HuggingFace-FDEE21?logo=HuggingFace&logoColor=white&text=white)
+![](https://img.shields.io/badge/Jupyter-F37626.svg?&logo=Jupyter&logoColor=white)
+[![PyTorch](https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white)](#)
+[![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=fff)](#)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff)
+[![NumPy](https://img.shields.io/badge/NumPy-4DABCF?logo=numpy&logoColor=fff)](#)
+
 ## Description
 This tool aims at finetuning and evaluating Named Entity Recognition (NER) models for German historical newspaper contents with the help of the [HuggingFace Transformers](https://github.com/huggingface/transformers) library. It is implemented in such a way that different pretrained models from HuggingFace can be trained and tested with a variation of preprocessed and optionally combined datasets.
 
 In its current state, this repository mostly serves the purpose of training and evaluating NER models; however, including inference and automatic annotation of input datasets would be feasible with the help of further developments as well. Also have a look at our previously developed, BERT-based solutions for entity recognition, disambiguation and linking [sbb_ner](https://github.com/qurator-spk/sbb_ner) and [sbb_ned](https://github.com/qurator-spk/sbb_ned).
 
-* License 
-* DOI for related resources
+* License: [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+* Related resources: ZEFYS2025 dataset on [Github](https://github.com/qurator-spk/ZEFYS2025) and Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15771823.svg)](https://doi.org/10.5281/zenodo.15771823) 
 
 ## Installation
 * Install Python version 3.10.14, best to use a virtual environment for that (e.g. with [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv)).
@@ -43,4 +50,4 @@ For a first/broad understanding of different functionalities included in `config
 To be able to experiment with multiple training configurations at once, `experiment.py` and `Makefile` were developed. Experiment results are saved as `.pkl` files and can then be accessed similar to `experiment.ipynb`.
 
 ## How to cite
-* Publication
+to be added
