@@ -1,11 +1,11 @@
 # sbb_ner_hf
 
-![](https://img.shields.io/badge/-HuggingFace-FDEE21?logo=HuggingFace&logoColor=white&text=white)
-![](https://img.shields.io/badge/Jupyter-F37626.svg?&logo=Jupyter&logoColor=white)
-[![PyTorch](https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white)](#)
-[![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=fff)](#)
-![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff)
-[![NumPy](https://img.shields.io/badge/NumPy-4DABCF?logo=numpy&logoColor=fff)](#)
+[![HuggingFace](https://img.shields.io/badge/-HuggingFace-FDEE21?logo=HuggingFace&logoColor=white&text=white)](https://huggingface.co/)
+[![Jupyter](https://img.shields.io/badge/Jupyter-F37626.svg?&logo=Jupyter&logoColor=white)](https://jupyter.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=fff)](https://pandas.pydata.org/)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff)](https://www.python.org/)
+[![NumPy](https://img.shields.io/badge/NumPy-4DABCF?logo=numpy&logoColor=fff)](https://numpy.org/)
 
 ## Description
 This tool aims at finetuning and evaluating Named Entity Recognition (NER) models for German historical newspaper contents with the help of the [HuggingFace Transformers](https://github.com/huggingface/transformers) library. It is implemented in such a way that different pretrained models from HuggingFace can be trained and tested with a variation of preprocessed and optionally combined datasets.
