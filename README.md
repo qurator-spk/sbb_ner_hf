@@ -44,10 +44,52 @@ Each preprocessing script uses the [`datasets.Dataset.save_to_disk()`](https://h
 * `ner_tags`: nested list of all the NER tags per sentence
 
 ### Introduction
-For a first/broad understanding of different functionalities included in `config.py`, `train.py`, `merge_datasets.py` and `eval_opt.py`, see `main.ipynb`. The [`token_classification.ipynb`](https://github.com/huggingface/notebooks/blob/main/examples/token_classification.ipynb) notebook from HuggingFace served as a starting point to the developments which can be found in these files. To run the code cells from `main.ipynb`, [Jupyter Notebook](https://jupyter-notebook.readthedocs.io/en/stable/) needs to be installed.
+For a first/broad understanding of different functionalities included in [`config.py`](config.py), 
+[`train.py`](train.py), [`merge_datasets.py`](merge_datasets.py) and [`eval_opt.py`](eval_opt.py), see [`main.ipynb`](). 
+The [`token_classification.ipynb`](https://github.com/huggingface/notebooks/blob/main/examples/token_classification.ipynb) notebook from HuggingFace served as a starting point to the developments which 
+can be found in these files. 
+To run the code cells from `main.ipynb`, [Jupyter Notebook](https://jupyter-notebook.readthedocs.io/en/stable/) needs to be installed.
 
 ### Experiments
-To be able to experiment with multiple training configurations at once, `experiment.py` and `Makefile` were developed. Experiment results are saved as `.pkl` files and can then be accessed similar to `experiment.ipynb`.
+To be able to experiment with multiple training configurations at once, [`experiment.py`](experiment.py) and 
+[`Makefile`](Makefile) were developed. Experimental results are saved as `.pkl` files and can then be accessed similar 
+to [`experiment.ipynb`](experiment.ipynb).
+
+[`experiment.py`](experiment.py) provides the following command line interface. How it has been used to obtain the
+results published in the paper can be seen from the [`Makefile`](Makefile). The tables in the paper have been generated
+by [`experiment.ipynb`](experiment.ipynb).
+```
+python experiment.py --help
+Usage: experiment.py [OPTIONS] RESULT_FILE
+
+Options:
+  --max-epochs INTEGER            Maximum number of epochs to train. Default
+                                  30.
+  --exp-type [single|merged|historical|contemporary]
+  --batch-size INTEGER            Can be supplied multiple times. Batch size
+                                  to try.
+  --learning-rate FLOAT           Can be supplied multiple times. Learning
+                                  rate to try.
+  --weight-decay FLOAT            Can be supplied multiple times. Weight decay
+                                  to try.
+  --warmup-step INTEGER           Can be supplied multiple times. Warmup steps
+                                  to try.
+  --use-data-config TEXT          Can be supplied multiple times. Run only on
+                                  these training configs.
+  --use-test-config TEXT          Can be supplied multiple times. Test each
+                                  trained model on these configs.
+  --pretrain-config-file PATH     Train on pretrained models defined in this
+                                  result file (from a previous experiment.py
+                                  run).
+  --pretrain-path PATH            Load the pretrained models checkpoints
+                                  (EXP_... directories) from this directory.
+                                  Default './'
+  --model-storage-path PATH       Store the models checkpoints (EXP_...
+                                  directories) in this directory.
+  --dry-run                       Dry run only. Do not train or test but just
+                                  check if everything runs through.
+  --help                          Show this message and exit.
+```
 
 ## How to cite
 to be added
