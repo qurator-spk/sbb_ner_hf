@@ -92,4 +92,29 @@ Options:
 ```
 
 ## How to cite
-to be added
+
+### Dataset
+
+```bibtex
+@dataset{schneider_2025_15771823,
+  author       = {Schneider, Sophie and
+                  Förstel, Ulrike and
+                  Labusch, Kai and
+                  Lehmann, Jörg and
+                  Neudecker, Clemens},
+  title        = {ZEFYS2025: A German Dataset for Named Entity
+                   Recognition and Entity Linking for Historical
+                   Newspapers
+                  },
+  month        = jul,
+  year         = 2025,
+  publisher    = {Staatsbibliothek zu Berlin - Berlin State Library},
+  version      = 1,
+  doi          = {10.5281/zenodo.15771823},
+  url          = {https://doi.org/10.5281/zenodo.15771823},
+}
+
+```
+
+### Publication
+[will be added soon]
