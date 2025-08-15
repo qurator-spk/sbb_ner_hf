@@ -51,13 +51,13 @@ can be found in these files.
 To run the code cells from `main.ipynb`, [Jupyter Notebook](https://jupyter-notebook.readthedocs.io/en/stable/) needs to be installed.
 
 ### Experiments
-To be able to experiment with multiple training configurations at once, [`experiment.py`](experiment.py) and 
+To be able to experiment with multiple training configurations at once, [`experiments.py`](experiments.py) and 
 [`Makefile`](Makefile) were developed. Experimental results are saved as `.pkl` files and can then be accessed similar 
-to [`experiment.ipynb`](experiment.ipynb).
+to [`experiments.ipynb`](experiments.ipynb).
 
 [`experiment.py`](experiment.py) provides the following command line interface. How it has been used to obtain the
 results published in the paper can be seen from the [`Makefile`](Makefile). The tables in the paper have been generated
-by [`experiment.ipynb`](experiment.ipynb).
+by [`experiments.ipynb`](experiments.ipynb).
 ```
 python experiment.py --help
 Usage: experiment.py [OPTIONS] RESULT_FILE
