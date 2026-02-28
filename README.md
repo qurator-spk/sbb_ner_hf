@@ -117,7 +117,8 @@ Options:
 ```
 
 ### Publication
-```
+
+```bibtex
 @inproceedings{schneider2025zefys2025,
   title={ZEFYS2025: A German Historical Newspaper Dataset for Named Entity Recognition and Entity Linking},
   author={Schneider, Sophie and F{\"o}rstel, Ulrike and Labusch, Kai and Lehmann, J{\"o}rg and Neudecker, Clemens},
