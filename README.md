@@ -117,4 +117,12 @@ Options:
 ```
 
 ### Publication
-[will be added soon]
+```
+@inproceedings{schneider2025zefys2025,
+  title={ZEFYS2025: A German Historical Newspaper Dataset for Named Entity Recognition and Entity Linking},
+  author={Schneider, Sophie and F{\"o}rstel, Ulrike and Labusch, Kai and Lehmann, J{\"o}rg and Neudecker, Clemens},
+  booktitle={Proceedings of the 21st Conference on Natural Language Processing (KONVENS 2025): Long and Short Papers},
+  pages={48--58},
+  year={2025}
+}
+```
